@@ -26,10 +26,10 @@ npm run server
 1 month      |   1M
 
 # Version Log
-v0.0.1    Create README.md file with minimum instructions
-v0.0.2    
-v0.0.3    Set TypeScript invierment with folders /src and /dist
-v0.0.4    
+v0.0.1 Create README.md file with minimum instructions
+v0.0.2 Create .gitignore with /node_modules/ | .env | test.txt
+v0.0.3 Set TypeScript invierment with folders /src and /dist
+v0.0.4 
 v0.0.5    
 v0.0.6    
 v0.0.7    

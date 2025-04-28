@@ -1,4 +1,3 @@
-// import { clone_settings } from "./clone_settings.js";
 import { GET_all_balances } from "./core/FRONTEND/GET_all_balances.js";
 
 async function run_List() {
@@ -7,7 +6,7 @@ async function run_List() {
   await GET_all_balances();
 
   console.timeEnd("Speed");
-  //   setImmediate(run_List); // Повторяем
+  //   setImmediate(run_List, 1000); // REPEAT EVERY 1 SECOND
 }
 
 run_List();
