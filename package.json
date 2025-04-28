@@ -7,17 +7,21 @@
     "find-up": "^7.0.0",
     "js-yaml": "^4.1.0",
     "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.8.3",
     "yaml": "^2.7.1"
   },
-  "name": "19-piehook-to-another-tools",
-  "version": "1.0.0",
+  "name": "piehook",
+  "version": "0.0.3",
   "description": "npm install node-fetch yaml js-yaml",
   "main": "run.js",
   "scripts": {
-    "start": "node run.js",
-    "server": "node server.js"
+    "run": "node run.js",
+    "start": "nodemon ./dist/index.js",
+    "server": "node server.js",
+    "build": "tsc —watch"
   },
   "keywords": [],
-  "author": "Michael D",
+  "author": "israskills",
   "license": "MIT"
 }
