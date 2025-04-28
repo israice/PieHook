@@ -6,6 +6,10 @@ npm run start
 # Show Balance from all accounts
 npm run server
 
+"run": "node run.js",
+"start": "nodemon ./dist/index.js",
+"server": "node server.js",
+"build": "tsc —watch"
 ---
 
 # Timeframe   |   Notation
@@ -29,13 +33,18 @@ npm run server
 
 # Version Log
 
-v0.0.1
-- Create README.md file with minimum instructions
-v0.0.2
-- Create .gitignore with /node_modules/ | .env | test.txt
-v0.0.3 
-- Set TypeScript invierment with folders /src and /dist
-v0.0.4 
+### v0.0.1
+- create README.md file with minimum instructions
+### v0.0.2
+- create .gitignore with /node_modules/ | .env | test.txt
+### v0.0.3 
+- set TypeScript invierment with folders /src and /dist
+### v0.0.4 
+- create frontend folder
+- create GET_all_balances.js that will bring all balances to GET_all_balances.json
+- create index.html with AJAX check for local GET_all_balances.json content
+- create server.js to run GET_all_balances.js with loop each 60 seconds
+- when running server.js run index.html in browser automaticly 
 v0.0.5    
 v0.0.6    
 v0.0.7 

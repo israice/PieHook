@@ -12,13 +12,10 @@ const __dirname  = path.dirname(__filename);
 function openBrowser(url) {
   let cmd;
   if (process.platform === 'win32') {
-    // Windows
     cmd = `start "" "${url}"`;
   } else if (process.platform === 'darwin') {
-    // macOS
     cmd = `open "${url}"`;
   } else {
-    // Linux / прочие
     cmd = `xdg-open "${url}"`;
   }
   exec(cmd, (err) => {
@@ -26,14 +23,18 @@ function openBrowser(url) {
   });
 }
 
-async function startServer() {
-  // 1) Опционально: получаем балансы один раз
+async function runGetAllBalances() {
   try {
     await GET_all_balances();
     console.log('✅ GET_all_balances выполнена');
   } catch (err) {
     console.error('❌ Ошибка в GET_all_balances:', err);
   }
+}
+
+async function startServer() {
+  // 1) Получаем балансы один раз при старте
+  await runGetAllBalances();
 
   // 2) Настройка Express
   const app = express();
@@ -47,12 +48,15 @@ async function startServer() {
     res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
   });
 
-  // 3) Запуск
+  // 3) Запуск сервера
   const PORT = 3000;
   app.listen(PORT, () => {
     const url = `http://localhost:${PORT}`;
     console.log(`✅ Сервер запущен: ${url}`);
     openBrowser(url);
+
+    // 4) Каждые 60 секунд выполнять GET_all_balances
+    setInterval(runGetAllBalances, 60 * 1000); // 60 000 мс = 60 секунд
   });
 }
 
