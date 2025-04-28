@@ -1,0 +1,52 @@
+body_collection:
+
+  account_info_body:
+    market: FUTURES
+    account: REAL1
+    symbol: XRPUSDT
+    
+  sell_short_market_body:
+    market: FUTURES
+    symbol: XRPUSDT
+    marginType: ISOLATED
+    leverage: 75
+    side: BUY
+    positionSide: SHORT
+    type: MARKET
+    payWith: QUOTE-ASSET
+    quantity: 0.84
+
+  buy_long_market_body:
+    market: FUTURES
+    symbol: XRPUSDT
+    marginType: ISOLATED
+    leverage: 75
+    side: BUY
+    positionSide: LONG
+    type: MARKET
+    payWith: QUOTE-ASSET
+    quantity: 0.84
+
+  sell_long_market_body:
+    market: FUTURES
+    symbol: XRPUSDT
+    marginType: ISOLATED
+    leverage: 75
+    side: SELL
+    positionSide: LONG
+    type: MARKET
+    payWith: QUOTE-ASSET
+    quantity: 0.84
+
+  buy_short_market_body:
+    market: FUTURES
+    symbol: XRPUSDT
+    marginType: ISOLATED
+    leverage: 75
+    side: SELL
+    positionSide: SHORT
+    type: MARKET
+    payWith: QUOTE-ASSET
+    quantity: 0.84
+
+

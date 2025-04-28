@@ -1,0 +1,25 @@
+создай скрипт JS ES
+
+который сравнивает значения
+переменной
+название которой заканчивается на _low
+xrpusdt@kline_1m_low: '2.0841'
+в файле 
+core/the_candle/candle.yaml
+
+
+сравнить с переменной 
+core/the_candle/old_candle.yaml
+название которой заканчивается на low_2
+xrpusdt@kline_1m_low_2: '2.0841'
+
+если _low меньше чем low_2
+
+запускай импортируемые 
+
+  await check_closed_LONG_RED_2();
+  await check_closed_LONG_RED_4();
+
+
+
+создай настройки вверху для удобстава конфигурации перед запуском

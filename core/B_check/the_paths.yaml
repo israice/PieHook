@@ -1,0 +1,10 @@
+counter: 8
+the_paths:
+  - Binance\REAL1\perpetual\XRPUSDT\6h
+  - Binance\REAL1\perpetual\XLMUSDT\6h
+  - Binance\REAL2\perpetual\XRPUSDT\8h
+  - Binance\REAL2\perpetual\XLMUSDT\8h
+  - Binance\REAL3\perpetual\XRPUSDT\12h
+  - Binance\REAL3\perpetual\XLMUSDT\12h
+  - Binance\REAL4\perpetual\XRPUSDT\1d
+  - Binance\REAL4\perpetual\XLMUSDT\1d

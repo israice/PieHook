@@ -1,0 +1,38 @@
+hedge_mode_enabled: true
+positions:
+  - symbol: XRPUSDT
+    positionAmt: '57.1'
+    entryPrice: '2.1654'
+    breakEvenPrice: '2.1664827'
+    markPrice: '2.23040000'
+    unRealizedProfit: '3.71150000'
+    liquidationPrice: '2.14666082'
+    leverage: '75'
+    maxNotionalValue: '10000'
+    marginType: isolated
+    isolatedMargin: '5.39437897'
+    isAutoAddMargin: 'false'
+    positionSide: LONG
+    notional: '127.35584000'
+    isolatedWallet: '1.68287897'
+    updateTime: 1745769600669
+    isolated: true
+    adlQuantile: 3
+  - symbol: XRPUSDT
+    positionAmt: '0.0'
+    entryPrice: '0.0'
+    breakEvenPrice: '0.0'
+    markPrice: '2.23040000'
+    unRealizedProfit: '0.00000000'
+    liquidationPrice: '0'
+    leverage: '75'
+    maxNotionalValue: '10000'
+    marginType: isolated
+    isolatedMargin: '0.00000000'
+    isAutoAddMargin: 'false'
+    positionSide: SHORT
+    notional: '0'
+    isolatedWallet: '0'
+    updateTime: 1745317311387
+    isolated: true
+    adlQuantile: 0
