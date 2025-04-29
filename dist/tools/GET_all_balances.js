@@ -3,7 +3,7 @@
 // ============================================================
 const ENV_PATH = '.env';
 const SETTINGS_FILE = './settings.yaml';
-const OUTPUT_FILE = './data/GET_all_balances.json';
+const OUTPUT_FILE = './GET_all_balances.json';
 const API_BASE_URL = 'https://fapi.binance.com';
 const POSITION_ENDPOINT = '/fapi/v2/positionRisk';
 const BALANCE_ENDPOINT = '/fapi/v2/balance';

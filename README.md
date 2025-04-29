@@ -1,13 +1,16 @@
 # Install needed packages
-
-npm i
+- npm i
 
 # Run the project
+- npm run backend // run the project using NODE
+- npm run frontend // run balances on FRONTEND
+- npm run start // run the project using nodemon watcher
+- npm run build // run TS watcher with TS converter to JS
 
-npm run backend // run the project using NODE
-npm run frontend // run balances on FRONTEND
-npm run start // run the project using nodemon watcher
-npm run build // run TS watcher with TS converter to JS
+# GITHuB UPDATE
+git add .
+git commit -m "create test.ts
+git push
 
 ---
 
@@ -29,8 +32,10 @@ npm run build // run TS watcher with TS converter to JS
 - Cannot find name 'process'. FIX: npm install --save-dev @types/node
 - rename server.js to frontend.ts
 - fix the paths in frontend.ts
+### v0.0.6
+- create test.ts
 
-v0.0.6  
+
 v0.0.7
 v0.0.8  
 v0.0.9  
