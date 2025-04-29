@@ -18,7 +18,6 @@ import { clone_old_data } from "./core/tools/clone_old_data.js";
 import { delete_previus_session } from "./core/delete_previus_session.js";
 import { clone_config_file } from "./core/tools/clone_config_file.js";
 import { clear_front_files } from "./core/tools/clear_front_files.js";
-import { clone_settings } from "./core/clone_settings.js";
 
 let shouldStop = false;
 process.on("SIGINT", () => {
@@ -29,7 +28,6 @@ async function run_List_0() {
   await delete_previus_session();
   await clone_config_file();
   await clear_front_files();
-  await clone_settings();
 }
 
 async function run_List() {

@@ -14,9 +14,9 @@ async function long_List() {
   await reset_settings_BUY_PERCENT_SETTINGS();
   await copy_first_candle_to_second_candle();
 
-  await GET_both_side_positions();
+  // await GET_both_side_positions();
   await update_body_quantity_via_info_long_half_position();
-  await sell_long_market_body();
+  // await sell_long_market_body();
   console.log("- - - LONG SELL 50%");
   // -------------------------------
 }

@@ -22,9 +22,9 @@ async function long_List() {
   await reset_settings_QUANTITY_LONG_BUY_STEP();
   await add_plus_QUANTITY_SHORT_BUY_STEP();
   await update_body_using_QUANTITY_SELL_ALL();
-  await sell_short_market_body();
+  // await sell_short_market_body();
   await update_body_using_QUANTITY_SHORT_BUY_STEP();
-  await buy_short_market_body();
+  // await buy_short_market_body();
   console.log("- - - 🔴 SHORT BUY");
 }
 

@@ -14,7 +14,7 @@ async function run_List() {
   await reset_body_symbol_via_settings();
   await add_plus_PERCENT_LONG_SELL();
   await update_body_using_QUANTITY_SETTINGS();
-  await sell_long_market_body();
+  // await sell_long_market_body();
   console.log("- - - LONG SELL");
 }
 

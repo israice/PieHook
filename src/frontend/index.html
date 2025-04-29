@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal JSON Viewer</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .content-container { width: 90%; margin: 0 auto; padding: 10px; }
+    .key-column { font-weight: bold; background-color: #f8f9fa; width: 25%; }
+    .value-column { width: 75%; }
+    .nested-table { width: 100%; margin-bottom: 0 !important; }
+    .nested-object { border-left: 3px solid #0d6efd; padding-left: 8px; margin-bottom: 5px; }
+    .nested-array  { border-left: 3px solid #198754; padding-left: 8px; }
+    .object-title { font-weight: bold; margin-bottom: 5px; color: #0d6efd; }
+  </style>
+</head>
+<body>
+  <div class="content-container">
+    <!-- Заголовок -->
+    <div class="mb-2">
+      <h2 id="viewer-title">Balance of all accounts</h2>
+    </div>
+
+    <!-- Контейнер для JSON -->
+    <div id="json-container">
+      <div class="text-center">Loading data...</div>
+    </div>
+  </div>
+
+  <script>
+    function initializeJsonViewer({
+      jsonUrl,
+      interval    = 2000,
+      containerId = 'json-container',
+      maxNesting  = 5,
+      excludeKeys = []
+    }) {
+      let prevData = null;
+      const container = document.getElementById(containerId);
+
+      const timer = interval > 0
+        ? setInterval(fetchAndRender, interval)
+        : null;
+
+      function formatValue(v) {
+        if (v === null)      return '<span class="text-muted">null</span>';
+        if (v === undefined) return '<span class="text-muted">undefined</span>';
+        if (typeof v === 'boolean') return `<span class="text-primary">${v}</span>`;
+        if (typeof v === 'number')  return `<span class="text-danger">${v}</span>`;
+        if (typeof v === 'string')  return `<span class="text-success">"${v}"</span>`;
+        return v;
+      }
+
+      function renderSimpleArray(arr, lvl) {
+        const rows = arr.map((it, i) => `
+          <tr>
+            <td><strong>${i}</strong></td>
+            <td>${(typeof it === 'object' && it !== null)
+                ? renderJson(it, lvl+1)
+                : formatValue(it)
+            }</td>
+          </tr>`).join('');
+        return `
+          <table class="table table-sm table-bordered table-striped nested-table">
+            <thead class="table-light">
+              <tr><th width="15%">Index</th><th>Value</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+      }
+
+      function renderJson(data, lvl = 0) {
+        if (lvl > maxNesting) lvl = maxNesting;
+
+        if (Array.isArray(data)) {
+          const isObjArr = data.length && typeof data[0] === 'object' && data[0] !== null;
+          let html = `<div class="nested-array">`;
+
+          if (isObjArr) {
+            const keys = Array.from(data.reduce((s, it) => {
+              if (it && typeof it === 'object')
+                Object.keys(it).forEach(k => { if (!excludeKeys.includes(k)) s.add(k); });
+              return s;
+            }, new Set()));
+
+            html += `
+              <table class="table table-sm table-bordered table-striped nested-table">
+                <thead class="table-light">
+                  <tr><th>#</th>${keys.map(k => `<th>${k}</th>`).join('')}</tr>
+                </thead>
+                <tbody>
+                  ${data.map((it, i) => `
+                    <tr>
+                      <td><strong>${i}</strong></td>
+                      ${keys.map(k => `
+                        <td>${(it[k] && typeof it[k] === 'object')
+                          ? renderJson(it[k], lvl+1)
+                          : formatValue(it[k])
+                        }</td>`).join('')}
+                    </tr>`).join('')}
+                </tbody>
+              </table>`;
+          } else {
+            html += renderSimpleArray(data, lvl);
+          }
+
+          return html + `</div>`;
+        }
+
+        if (data && typeof data === 'object') {
+          const rows = Object.entries(data)
+            .filter(([k]) => !excludeKeys.includes(k))
+            .map(([k, v]) => `
+              <tr>
+                <td class="key-column">${k}</td>
+                <td class="value-column">${(v && typeof v === 'object')
+                    ? renderJson(v, lvl+1)
+                    : formatValue(v)
+                }</td>
+              </tr>`).join('');
+
+          return `
+            <div class="nested-object">
+              <div class="object-title">Object {${rows.split('</tr>').length - 1} props}</div>
+              <table class="table table-sm table-bordered nested-table">${rows}</table>
+            </div>`;
+        }
+
+        return formatValue(data);
+      }
+
+      function fetchAndRender() {
+        fetch(jsonUrl, { cache: 'no-store' })
+          .then(r => r.json())
+          .then(data => {
+            if (JSON.stringify(data) !== JSON.stringify(prevData)) {
+              container.innerHTML = renderJson(data);
+              prevData = data;
+            }
+          })
+          .catch(err => {
+            // При ошибке оставляем последние данные в DOM
+            console.error('Error loading JSON:', err);
+          });
+      }
+
+      // Первая отрисовка
+      fetchAndRender();
+      window.addEventListener('beforeunload', () => {
+        if (timer) clearInterval(timer);
+      });
+    }
+
+    // Инициализация
+    initializeJsonViewer({
+      jsonUrl:     '/data/GET_all_balances.json',
+      interval:    2000,
+      excludeKeys: [
+        'maxNotionalValue',
+        'notional',
+        'breakEvenPrice',
+        'positionAmt',
+        'markPrice',
+        'hedge_mode_enabled',
+        'isAutoAddMargin',
+        'updateTime',
+        'isolated',
+        'adlQuantile'
+      ]
+    });
+  </script>
+</body>
+</html>

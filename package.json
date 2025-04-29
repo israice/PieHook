@@ -1,5 +1,15 @@
 {
+  "name": "piehook",
+  "version": "0.0.5",
+  "description": "Perpetual futures strategy 'PieHook'",
   "type": "module",
+  "main": "dist/backend.js",
+  "scripts": {
+    "build": "tsc --watch",
+    "dev": "nodemon src/backend.ts",
+    "backend": "node dist/backend.js",
+    "frontend": "node dist/frontend.js"
+  },
   "dependencies": {
     "axios": "^1.8.4",
     "dotenv": "^16.5.0",
@@ -7,19 +17,15 @@
     "find-up": "^7.0.0",
     "js-yaml": "^4.1.0",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.10",
-    "typescript": "^5.8.3",
     "yaml": "^2.7.1"
   },
-  "name": "piehook",
-  "version": "0.0.3",
-  "description": "npm install node-fetch yaml js-yaml",
-  "main": "run.js",
-  "scripts": {
-    "run": "node run.js",
-    "start": "nodemon ./dist/index.js",
-    "server": "node server.js",
-    "build": "tsc —watch"
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.17.32",
+    "@types/node-fetch": "^2.6.2",
+    "nodemon": "^3.1.10",
+    "typescript": "^5.8.3"
   },
   "keywords": [],
   "author": "israskills",

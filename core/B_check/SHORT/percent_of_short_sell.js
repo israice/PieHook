@@ -15,7 +15,7 @@ async function run_List() {
   await reset_body_symbol_via_settings();
   await add_plus_PERCENT_SHORT_SELL();
   await update_body_using_QUANTITY_SETTINGS();
-  await sell_short_market_body();
+  // await sell_short_market_body();
   console.log("- - - SHORT SELL");
 }
 

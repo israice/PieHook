@@ -19,9 +19,9 @@ async function run_List() {
 
   await add_plus_QUANTITY_LONG_BUY_STEP();
   await update_body_using_QUANTITY_SELL_ALL();
-  await sell_long_market_body();
+  // await sell_long_market_body();
   await update_body_using_QUANTITY_LONG_BUY_STEP();
-  await buy_long_market_body();
+  // await buy_long_market_body();
   console.log("- - - 🟢 LONG BUY");
 }
 
