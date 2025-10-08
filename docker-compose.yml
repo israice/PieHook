@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: 'redis:alpine'
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  websocket_client:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./1-Redis/settings.yaml:/app/1-Redis/settings.yaml:delegated
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f websocket.js || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:

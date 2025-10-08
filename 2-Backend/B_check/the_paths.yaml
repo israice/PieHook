@@ -1,0 +1,6 @@
+counter: 4
+the_paths:
+  - Binance\REAL1\perpetual\XRPUSDT\1m
+  - Binance\REAL1\perpetual\XLMUSDT\1m
+  - Binance\REAL3\perpetual\XRPUSDT\3m
+  - Binance\REAL3\perpetual\XLMUSDT\3m

@@ -1,0 +1,38 @@
+hedge_mode_enabled: true
+positions:
+  - symbol: XLMUSDT
+    positionAmt: '0'
+    entryPrice: '0.0'
+    breakEvenPrice: '0.0'
+    markPrice: '0.24124000'
+    unRealizedProfit: '0.00000000'
+    liquidationPrice: '0'
+    leverage: '75'
+    maxNotionalValue: '10000'
+    marginType: isolated
+    isolatedMargin: '0.00000000'
+    isAutoAddMargin: 'false'
+    positionSide: LONG
+    notional: '0'
+    isolatedWallet: '0'
+    updateTime: 1742038701102
+    isolated: true
+    adlQuantile: 0
+  - symbol: XLMUSDT
+    positionAmt: '-404'
+    entryPrice: '0.24137'
+    breakEvenPrice: '0.241249315'
+    markPrice: '0.24124000'
+    unRealizedProfit: '0.05252000'
+    liquidationPrice: '0.24204711'
+    leverage: '75'
+    maxNotionalValue: '10000'
+    marginType: isolated
+    isolatedMargin: '1.30394364'
+    isAutoAddMargin: 'false'
+    positionSide: SHORT
+    notional: '-97.46096000'
+    isolatedWallet: '1.25142364'
+    updateTime: 1745156371496
+    isolated: true
+    adlQuantile: 4
