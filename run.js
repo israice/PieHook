@@ -1,31 +1,28 @@
-
 // ================== ИМПОРТ ==================
-import { create_candles_percent } from "./2-Backend/tools/create_candles_percent.js";
-import { create_candles_trend } from "./2-Backend/tools/create_candles_trend.js";
-import { clone_old_data } from "./2-Backend/tools/clone_old_data.js";
-import { delete_previus_session } from "./2-Backend/delete_previus_session.js";
-import { clone_settings } from "./2-Backend/clone_settings.js";
+import { backend_runner } from "./CORE/2_Backend/A_run.js";
+import { clone_candle_0 } from "./CORE/2_Backend/AA_clone_candle[0].js";
 
-
-const LOOP_DELAY_MS = 200;
+const LOOP_DELAY_MS = 500;
 let loopMode = true;
 let stopRequested = false;
 
+// ================================================
 
-// --- подготовка окружения ---
-async function prepareEnvironment() {
-  // await delete_previus_session();
-  await clone_settings();
+async function pre_start_list() {
+  await clone_candle_0();
 }
 
-// --- одна итерация обработки ---
-async function runIteration() {
+// ================================================
+
+async function list_in_loop() {
   console.time("Speed");
-  // await create_candles_percent();
-  // await create_candles_trend();
-  await clone_old_data();
+
+  await backend_runner();
+
   console.timeEnd("Speed");
 }
+
+// ================================================
 
 process.on("SIGINT", handleStopSignal);
 
@@ -46,7 +43,7 @@ async function scheduleNextIteration() {
 
 // --- основной процесс цикла ---
 async function runLoop() {
-  await runIteration();
+  await list_in_loop();
   if (stopRequested) {
     console.log("Stopping after current iteration.");
     process.exit(0);
@@ -55,14 +52,16 @@ async function runLoop() {
 }
 
 async function main_runner() {
-  await prepareEnvironment();
+  await pre_start_list();
   if (!loopMode) {
     console.log("One-shot mode:");
-    await runIteration();
+    await list_in_loop();
     console.log("Done.");
     process.exit(0);
   }
-  console.log("Loop mode started. Press Ctrl+C to stop after current iteration.");
+  console.log(
+    "Loop mode started. Press Ctrl+C to stop after current iteration."
+  );
   runLoop();
 }
 

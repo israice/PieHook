@@ -1,6 +1,6 @@
 services:
   redis:
-    image: 'redis:alpine'
+    image: "redis:alpine"
     ports:
       - "6379:6379"
     volumes:
@@ -20,7 +20,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./1-Redis/settings.yaml:/app/1-Redis/settings.yaml:delegated
+      - ./CORE/1_Redis:/app/CORE/1_Redis:delegated
     networks:
       - app-network
     restart: unless-stopped
@@ -30,9 +30,9 @@ services:
       timeout: 10s
       retries: 3
 
+# сеть для взаимодействия между контейнерами
 networks:
   app-network:
     driver: bridge
-
 volumes:
   redis-data:

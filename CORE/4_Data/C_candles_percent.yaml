@@ -1,0 +1,60 @@
+# ---------------------
+1m_trend: LONG
+1m_percent: 0.056
+3m_trend: LONG
+3m_percent: -0.056
+5m_trend: LONG
+5m_percent: 0.055
+15m_trend: LONG
+15m_percent: 0.056
+30m_trend: LONG
+30m_percent: -0.150
+1h_trend: LONG
+1h_percent: -0.150
+2h_trend: LONG
+2h_percent: -0.150
+4h_trend: LONG
+4h_percent: -0.150
+6h_trend: LONG
+6h_percent: -0.150
+8h_trend: LONG
+8h_percent: -0.150
+12h_trend: LONG
+12h_percent: -0.150
+1d_trend: LONG
+1d_percent: -0.150
+3d_trend: LONG
+3d_percent: -0.150
+1w_trend: LONG
+1w_percent: -0.150
+1M_trend: LONG
+1M_percent: -0.150
+2M_trend: LONG
+2M_percent: -0.150
+3M_trend: LONG
+3M_percent: -0.150
+6M_trend: LONG
+6M_percent: -0.150
+1y_trend: LONG
+1y_percent: -0.150
+# ---------------------
+TIMEFRAMES:
+  - 1m
+  - 3m
+  - 5m
+  - 15m
+  - 30m
+  - 1h
+  - 2h
+  - 4h
+  - 6h
+  - 8h
+  - 12h
+  - 1d
+  - 3d
+  - 1w
+  - 1M
+  - 2M
+  - 3M
+  - 6M
+  - 1y

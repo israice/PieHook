@@ -1,0 +1,9 @@
+market: FUTURES
+symbol: XLMUSDT
+marginType: ISOLATED
+leverage: 75
+side: SELL
+positionSide: SHORT
+type: MARKET
+payWith: QUOTE-ASSET
+quantity: 0.63
