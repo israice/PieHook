@@ -1,23 +1,27 @@
 ## PieHook-JS
 
+![alt text](screenshot.png)
 
-### Перед первы запуском
+
+
+### Before start
 npm install ws redis yaml rxjs node-fetch js-yaml
 
 ### Run Redis Docker
 docker-compose up -d --build
 
-### Поглазеть на поток Websocket
+### Show Websocket in Dcoker
 docker-compose logs -f websocket_client
 
-### Запуск
+### Run the checks
 node run.js
 
 ---
 
 ### Dev Roadmap
-- [ ] v.0.0.8 check for each timeframe percent and trend 
-- [ ] v.0.0.7 get all other candles [0] and save in history file
+- [ ] v.0.0.9 check for each timeframe percent and trend 
+- [ ] v.0.0.8 get all other candles [0] and save in history file
+- [x] v.0.0.7 created screenshot.png
 - [x] v.0.0.6 created A_pre_start B_reset C_after_finish
 - [x] v.0.0.5 created main runner and backend runner
 - [x] v.0.0.4 created A_clone_candle[0]
@@ -28,6 +32,6 @@ node run.js
 
 # Github Update
 git add .
-git commit -m "v.0.0.6 created A_pre_start B_reset C_after_finish"
+git commit -m "v.0.0.7 created screenshot.png"
 git push
 
