@@ -1,6 +1,7 @@
 // ================== ИМПОРТ ==================
-import { backend_runner } from "./CORE/2_Backend/A_run.js";
-import { clone_candle_0 } from "./CORE/2_Backend/AA_clone_candle[0].js";
+import { check_pre_start } from "./CORE/2_Backend/A_RESET/A_pre_start/A_run.js";
+import { backend_runner } from "./CORE/2_Backend/A_backend.js";
+import { run_after_finish } from "./CORE/2_Backend/A_RESET/C_after_finish/C_run.js";
 
 const LOOP_DELAY_MS = 500;
 let loopMode = true;
@@ -9,17 +10,26 @@ let stopRequested = false;
 // ================================================
 
 async function pre_start_list() {
-  await clone_candle_0();
+  console.log("- - Checking if Pre Start Needed...");
+  await check_pre_start();
 }
 
 // ================================================
 
 async function list_in_loop() {
+  console.log("- - Backend Checks...");
   console.time("Speed");
 
   await backend_runner();
 
   console.timeEnd("Speed");
+}
+
+// ================================================
+
+async function after_finish() {
+  console.log("- - After Finish...");
+  await run_after_finish();
 }
 
 // ================================================
@@ -35,6 +45,7 @@ function handleStopSignal() {
 // --- выполнение в цикле ---
 async function scheduleNextIteration() {
   if (stopRequested) {
+    await after_finish();
     console.log("Loop stopped gracefully.");
     process.exit(0);
   }
@@ -45,7 +56,7 @@ async function scheduleNextIteration() {
 async function runLoop() {
   await list_in_loop();
   if (stopRequested) {
-    console.log("Stopping after current iteration.");
+    await after_finish();
     process.exit(0);
   }
   scheduleNextIteration();
@@ -59,9 +70,6 @@ async function main_runner() {
     console.log("Done.");
     process.exit(0);
   }
-  console.log(
-    "Loop mode started. Press Ctrl+C to stop after current iteration."
-  );
   runLoop();
 }
 

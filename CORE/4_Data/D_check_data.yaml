@@ -1,4 +1,10 @@
 # --------------------- NEW
+# A_pre_start
+RUN_PRE_START: ENABLE
+# B_reset
+RUN_RESET: DISABLE
+
+
 # --------------------- OLD
 BINANCE_ACCOUNT:
   - REAL1
