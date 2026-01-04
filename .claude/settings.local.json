@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker unpause:*)",
+      "Bash(docker kill:*)",
+      "Bash(docker rm:*)",
+      "Bash(wsl --shutdown)",
+      "Bash(timeout:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker exec:*)"
+    ]
+  }
+}

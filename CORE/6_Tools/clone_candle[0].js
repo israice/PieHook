@@ -6,7 +6,7 @@ const clone_candle_0 = async () => {
 
   try {
     await copyFile(src, dest);
-    console.log("✅ Копия свечи [0] успешно сохранена.");
+    console.log("✅ Finish...");
   } catch (err) {
     console.error("✗ Ошибка копирования:", err.message);
   }

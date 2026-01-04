@@ -6,14 +6,14 @@ import * as redis from 'redis';
    🔧 ДЕКЛАРАТИВНЫЕ НАСТРОЙКИ
    =========================== */
 
-const SETTINGS_FILE = 'CORE/1_Redis/websocket_config.yaml';
+const SETTINGS_FILE = './settings.yaml';
 
 const settings = yaml.load(fs.readFileSync(SETTINGS_FILE, 'utf8'));
 
-const REDIS_HOST = settings.redis_host || 'localhost';
-const REDIS_PORT = settings.redis_port || 6379;
-const REDIS_DB   = settings.redis_db   || 0;
-const REDIS_KEY  = settings.redis_key  || 'candle_key';
+const REDIS_HOST = settings.REDIS_HOST || 'localhost';
+const REDIS_PORT = settings.REDIS_PORT || 6379;
+const REDIS_DB   = settings.REDIS_DB   || 0;
+const SYMBOLS_LIST = settings.SYMBOLS_LIST || [];
 
 const OUTPUT_CSV = 'CORE/4_Data/A_1m_candle[0].csv';
 
@@ -47,55 +47,80 @@ async function get_candle_from_redis() {
     await redisClient.connect();
   } catch (err) {
     console.log(`❌ Не удалось подключиться к Redis по ${REDIS_HOST}:${REDIS_PORT}`);
-    return; // выход, если подключение не удалось
+    return;
   }
 
   try {
-    const jsonData = await redisClient.get(REDIS_KEY);
+    const csvRows = [];
 
-    if (!jsonData) {
-      console.log(`⚠️  Данные не получены. Ключ "${REDIS_KEY}" отсутствует в Redis.`);
+    // Читаем данные для всех символов
+    for (let index = 0; index < SYMBOLS_LIST.length; index++) {
+      const symbol = SYMBOLS_LIST[index];
+      const redisKey = `new_1m_candle_${index}`;
+
+      const jsonData = await redisClient.get(redisKey);
+
+      if (!jsonData) {
+        console.log(`⚠️  [${symbol}] Ключ "${redisKey}" отсутствует в Redis.`);
+        continue;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(jsonData);
+      } catch {
+        console.log(`⚠️  [${symbol}] Ошибка парсинга JSON для ключа "${redisKey}".`);
+        continue;
+      }
+
+      const kline = data.k;
+      if (!kline) {
+        console.log(`⚠️  [${symbol}] В данных отсутствует объект "k".`);
+        continue;
+      }
+
+      const openTimeISO  = new Date(kline.t).toISOString();
+      const closeTimeISO = new Date(kline.T).toISOString();
+
+      const csvRow = [
+        openTimeISO,
+        kline.o,
+        kline.h,
+        kline.l,
+        kline.c,
+        kline.v,
+        closeTimeISO,
+        kline.q,
+        kline.n,
+        kline.x,
+        kline.V,
+        kline.Q
+      ].join(',');
+
+      csvRows.push(csvRow);
+      console.log(`✓ [${symbol}] Свеча прочитана из Redis`);
+    }
+
+    if (csvRows.length === 0) {
+      console.log(`⚠️  Нет данных для записи в CSV.`);
       await redisClient.quit();
       return;
     }
 
-    let data;
+    // Запись всех строк разом (атомарно)
+    const tempFile = `${OUTPUT_CSV}.tmp.${process.pid}.${Date.now()}`;
+    const content = `${CSV_HEADERS}\n${csvRows.join('\n')}`;
+
     try {
-      data = JSON.parse(jsonData);
-    } catch {
-      console.log(`⚠️  Ошибка парсинга JSON для ключа "${REDIS_KEY}".`);
-      await redisClient.quit();
-      return;
+      fs.writeFileSync(tempFile, content, { mode: 0o644 });
+      fs.renameSync(tempFile, OUTPUT_CSV);
+      console.log(`\n✅ Записано ${csvRows.length} свечей в ${OUTPUT_CSV}`);
+    } catch (err) {
+      try {
+        fs.unlinkSync(tempFile);
+      } catch {}
+      throw err;
     }
-
-    const kline = data.k;
-    if (!kline) {
-      console.log(`⚠️  В данных отсутствует объект "k".`);
-      await redisClient.quit();
-      return;
-    }
-
-    const openTimeISO  = new Date(kline.t).toISOString();
-    const closeTimeISO = new Date(kline.T).toISOString();
-
-    const csvRow = [
-      openTimeISO,
-      kline.o,
-      kline.h,
-      kline.l,
-      kline.c,
-      kline.v,
-      closeTimeISO,
-      kline.q,
-      kline.n,
-      kline.x,
-      kline.V,
-      kline.Q
-    ].join(',');
-
-    fs.writeFileSync(OUTPUT_CSV, `${CSV_HEADERS}\n${csvRow}`);
-
-    console.log(`✅ Свеча успешно получена из Redis и сохранена.`);
 
     await redisClient.quit();
   } catch (error) {

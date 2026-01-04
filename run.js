@@ -17,7 +17,6 @@ async function pre_start_list() {
 // ================================================
 
 async function list_in_loop() {
-  console.log("- - Backend Checks...");
   console.time("Speed");
 
   await backend_runner();

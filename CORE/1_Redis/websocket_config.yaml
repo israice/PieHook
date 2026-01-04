@@ -1,3 +1,0 @@
-websocket_url: wss://fstream.binance.com/ws/xrpusdt@kline_1m
-redis_key: new_1m_candle_0
-redis_port: 6379
