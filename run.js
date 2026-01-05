@@ -1,5 +1,5 @@
 // ================== ИМПОРТ ==================
-import { check_pre_start } from "./CORE/2_Backend/A_RESET/A_pre_start/A_run.js";
+import { before_first_start } from "./CORE/2_Backend/A_BEFORE_FIRST_START/A_check_if_on.js";
 import { backend_runner } from "./CORE/2_Backend/A_backend.js";
 import { run_after_finish } from "./CORE/2_Backend/A_RESET/C_after_finish/C_run.js";
 import { execSync } from "child_process";
@@ -16,35 +16,30 @@ async function ensureDockerRedisRunning() {
   console.log("🔍 Checking Docker containers...");
 
   try {
-    // Проверяем, запущены ли контейнеры
-    const output = execSync('docker ps --filter "name=PieHook-Redis" --format "{{.Names}}"', {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
+    // Проверяем состояние контейнеров (все, включая остановленные)
+    const allContainers = execSync(
+      'docker ps -a --filter "name=PieHook-Redis" --format "{{.Names}} {{.Status}}"',
+      {
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+      }
+    ).trim();
 
-    if (output.includes("PieHook-Redis")) {
+    if (!allContainers) {
+      // Контейнеры не существуют - создаём и запускаем
+      console.log("🚀 Creating and starting Docker containers...");
+      execSync("docker-compose up -d --build", { stdio: "inherit" });
+      console.log("✅ Docker containers created and started");
+    } else if (allContainers.includes("Up")) {
+      // Контейнеры уже запущены
       console.log("✅ Docker containers are already running");
       return;
-    }
-
-    // Проверяем, существуют ли контейнеры (но остановлены)
-    const allContainers = execSync('docker ps -a --filter "name=PieHook-" --format "{{.Names}}"', {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-
-    if (allContainers.includes("PieHook-Redis")) {
+    } else {
+      // Контейнеры существуют, но остановлены
       console.log("🔄 Starting Docker containers...");
       execSync("docker-compose up -d", { stdio: "inherit" });
       console.log("✅ Docker containers started");
-      return;
     }
-
-    // Контейнеры не существуют - создаём и запускаем
-    console.log("🚀 Creating and starting Docker containers...");
-    execSync("docker-compose up -d --build", { stdio: "inherit" });
-    console.log("✅ Docker containers created and started");
-
   } catch (error) {
     console.error("❌ Failed to start Docker containers:", error.message);
     console.log("\n💡 Please ensure Docker is running and try again.");
@@ -53,14 +48,13 @@ async function ensureDockerRedisRunning() {
 
   // Ждём пока Redis и Frontend будут готовы
   console.log("⏳ Waiting for services to be ready...");
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
 }
 
 // ================================================
 
 async function pre_start_list() {
-  console.log("- - Checking if Pre Start Needed...");
-  await check_pre_start();
+  await before_first_start();
 }
 
 // ================================================
@@ -89,12 +83,17 @@ function handleStopSignal() {
   stopRequested = true;
 }
 
+// --- остановка цикла ---
+async function stopLoop() {
+  await after_finish();
+  console.log("Loop stopped gracefully.");
+  process.exit(0);
+}
+
 // --- выполнение в цикле ---
 async function scheduleNextIteration() {
   if (stopRequested) {
-    await after_finish();
-    console.log("Loop stopped gracefully.");
-    process.exit(0);
+    await stopLoop();
   }
   setTimeout(runLoop, LOOP_DELAY_MS);
 }
@@ -103,8 +102,7 @@ async function scheduleNextIteration() {
 async function runLoop() {
   await list_in_loop();
   if (stopRequested) {
-    await after_finish();
-    process.exit(0);
+    await stopLoop();
   }
   scheduleNextIteration();
 }

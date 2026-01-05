@@ -1,42 +1,8 @@
 # --------------------- NEW
 # A_pre_start
-RUN_PRE_START: ENABLE
+BEFORE_FIRST_START: on
 # B_reset
-RUN_RESET: DISABLE
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+RUN_RESET: off
 
 # --------------------- OLD
 BINANCE_ACCOUNT:

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 // ------------------------------------------
 const FILE_PATH = 'CORE/4_Data/D_check_data.yaml'; // Path to the YAML file
 const KEY_TO_UPDATE = 'RUN_RESET'; // Key to update in YAML
-const NEW_VALUE = 'DISABLE'; // New value for the key
+const NEW_VALUE = 'off'; // New value for the key
 // ------------------------------------------
 
 // Function to read file content
@@ -20,7 +20,8 @@ function needsUpdate(content, key, value) {
     const currentValue = match[1].trim();
     return currentValue !== value;
   }
-  throw new Error(`Key "${key}" not found in file`);
+  console.log(`KEY_TO_UPDATE "${key}" not found in file`);
+  return null;
 }
 
 // Function to update specific key in text content
@@ -37,7 +38,11 @@ function writeFile(path, content) {
 // Main execution function
 async function disable_RUN_RESET() {
   let content = readFile(FILE_PATH);
-  if (needsUpdate(content, KEY_TO_UPDATE, NEW_VALUE)) {
+  const updateNeeded = needsUpdate(content, KEY_TO_UPDATE, NEW_VALUE);
+  if (updateNeeded === null) {
+    return; // Key not found, skip update
+  }
+  if (updateNeeded) {
     content = updateKeyInText(content, KEY_TO_UPDATE, NEW_VALUE);
     writeFile(FILE_PATH, content);
   }

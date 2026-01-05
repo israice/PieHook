@@ -1,4 +1,28 @@
-## PieHook-JS
+<h1 align="center">🧩 PieHook</h1>
+
+<p align="center">
+  <!-- GitHub badges -->
+  <a href="https://github.com/israice/PieHook/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/israice/PieHook?style=for-the-badge&logo=github" />
+  </a>
+  <a href="https://github.com/israice/PieHook/forks">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/israice/PieHook?style=for-the-badge&logo=github" />
+  </a>
+  <img alt="Last commit" src="https://img.shields.io/github/last-commit/israice/PieHook?style=for-the-badge" />
+  <img alt="Visitor Badge" src="https://visitor-badge.laobi.icu/badge?page_id=israice.PieHook" />
+</p>
+
+
+## 🚀 Live Website
+
+> **Try it instantly:**  
+> https://piehook.weforks.org/
+
+<!-- ---------------------------------------------------------- -->
+
+<details open>
+
+  <summary>Dev</summary>
 
 ### Last Dev Update
 
@@ -34,6 +58,7 @@ node run.js
     - fxed redis websocket and A_get_candle[0]_from_redis
     - added SSE method for web page live updates from csv file
     - added tradingview style to froendend page 
+    - added docker-compose.prod.yml
 - [ ] v0.0.8 - get all other candles [0] and save in history file
 - [ ] v0.0.9 - check for each timeframe percent and trend 
 
@@ -43,7 +68,7 @@ node run.js
 
   ```Bash
   git add .
-  git commit -m "v0.0.7 - added tradingview style to froendend page"
+  git commit -m "v0.0.7 - added docker-compose.prod.yml"
   git push
   ```
 
@@ -58,3 +83,7 @@ node run.js
   Copy-Item $env:TEMP\.env.backup .env -Force
   git push origin master --force  
   ```
+
+
+
+</details>

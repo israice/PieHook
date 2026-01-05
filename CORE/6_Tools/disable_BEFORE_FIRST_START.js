@@ -1,20 +1,19 @@
-
-import * as fs from 'fs';
+import * as fs from "fs";
 
 // ------------------------------------------
-const FILE_PATH = 'CORE/4_Data/D_check_data.yaml'; // Path to the YAML file
-const KEY_TO_UPDATE = 'RUN_RESET'; // Key to update in YAML
-const NEW_VALUE = 'on'; // New value for the key
+const FILE_PATH = "CORE/2_Backend/A_BEFORE_FIRST_START/A_check_if_on.yaml"; // Path to the YAML file
+const KEY_TO_UPDATE = "BEFORE_FIRST_START"; // Key to update in YAML
+const NEW_VALUE = "off"; // New value for the key
 // ------------------------------------------
 
 // Function to read file content
 function readFile(path) {
-  return fs.readFileSync(path, 'utf8');
+  return fs.readFileSync(path, "utf8");
 }
 
 // Function to check if key already has the desired value
 function needsUpdate(content, key, value) {
-  const regex = new RegExp(`^\\s*${key}:\\s*(.*)$`, 'gm');
+  const regex = new RegExp(`^\\s*${key}:\\s*(.*)$`, "gm");
   const match = regex.exec(content);
   if (match) {
     const currentValue = match[1].trim();
@@ -26,17 +25,17 @@ function needsUpdate(content, key, value) {
 
 // Function to update specific key in text content
 function updateKeyInText(content, key, value) {
-  const regex = new RegExp(`^(\\s*${key}:\\s*).*$`, 'gm');
+  const regex = new RegExp(`^(\\s*${key}:\\s*).*$`, "gm");
   return content.replace(regex, `$1${value}`);
 }
 
 // Function to write updated content to file
 function writeFile(path, content) {
-  fs.writeFileSync(path, content, 'utf8');
+  fs.writeFileSync(path, content, "utf8");
 }
 
 // Main execution function
-async function enable_RUN_RESET() {
+async function disable_BEFORE_FIRST_START() {
   let content = readFile(FILE_PATH);
   const updateNeeded = needsUpdate(content, KEY_TO_UPDATE, NEW_VALUE);
   if (updateNeeded === null) {
@@ -48,6 +47,5 @@ async function enable_RUN_RESET() {
   }
 }
 
-
-// enable_RUN_RESET();
-export { enable_RUN_RESET };
+// disable_BEFORE_FIRST_START();
+export { disable_BEFORE_FIRST_START };

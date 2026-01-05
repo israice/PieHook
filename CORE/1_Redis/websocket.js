@@ -15,6 +15,7 @@ const REDIS_DB = 0;
 const RECONNECT_DELAY = 3;
 const MAX_RECONNECT_DELAY = 60;
 const RECONNECT_AFTER_HOURS = 23;
+const HEALTH_CHECK_TIMEOUT = 5 * 60 * 1000; // 5 minutes without messages = dead connection
 
 // --- 1. Load Settings ---
 async function loadSettings() {
@@ -93,15 +94,32 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
       console.log(`[${symbol}] Connecting to ${url}... (attempt #${connectionCount})`);
       const ws = new WebSocket(url);
 
+      // Health check subject to detect dead connections
+      const healthCheck$ = new Subject();
+      let lastMessageTime = Date.now();
+
       // Auto-reconnect timer (23 hours by default - Binance disconnects at 24h)
       const periodicReconnect$ = timer(RECONNECT_AFTER_HOURS * 3600 * 1000).pipe(
         tap(() => console.log(`[${symbol}] ${RECONNECT_AFTER_HOURS}h limit reached. Reconnecting...`))
+      );
+
+      // Health check timer - triggers if no messages received within timeout
+      const healthCheckTimer$ = timer(0, 60 * 1000).pipe(
+        tap(() => {
+          const timeSinceLastMessage = Date.now() - lastMessageTime;
+          if (timeSinceLastMessage > HEALTH_CHECK_TIMEOUT) {
+            console.warn(`[${symbol}] ⚠ No messages for ${Math.floor(timeSinceLastMessage / 1000)}s. Connection appears dead.`);
+            healthCheck$.next();
+          }
+        }),
+        takeUntil(healthCheck$)
       );
 
       const open$ = fromEvent(ws, "open").pipe(
         tap(() => {
           console.log(`[${symbol}] ✓ Connected at ${new Date().toISOString()}`);
           currentReconnectDelay = RECONNECT_DELAY * 1000; // Reset delay on success
+          lastMessageTime = Date.now(); // Reset health check timer
         })
       );
 
@@ -110,10 +128,14 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
         tap((data) => {
           ws.pong(data); // Respond with same payload
           console.log(`[${symbol}] ← ping, → pong`);
+          lastMessageTime = Date.now(); // Update health check timer
         })
       );
 
       const message$ = fromEvent(ws, "message").pipe(
+        tap(() => {
+          lastMessageTime = Date.now(); // Update health check timer on every message
+        }),
         mergeMap((msg) => handleMessage(msg, redisClient, redisKey, symbol)),
         catchError((err) => {
           console.error(`[${symbol}] Message handler error:`, err.message);
@@ -132,10 +154,11 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
       );
 
       // Merge all event streams (including ping$ for Binance heartbeat requirement)
-      return merge(open$, ping$, message$, close$, error$, periodicReconnect$).pipe(
+      return merge(open$, ping$, message$, close$, error$, periodicReconnect$, healthCheckTimer$, healthCheck$).pipe(
         takeUntil(merge(manualReconnect$, shutdown$)),
         finalize(() => {
           console.log(`[${symbol}] Closing WebSocket...`);
+          healthCheck$.complete();
           if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
             ws.close(1000, "Normal closure");
           }
@@ -144,9 +167,10 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
     });
   };
 
-  // Reconnection stream with exponential backoff
-  manualReconnect$.pipe(
-    switchMap(() => {
+  // Single unified connection stream with auto-reconnect
+  const connectionStream$ = defer(() => connect()).pipe(
+    catchError((err) => {
+      console.error(`[${symbol}] Connection error:`, err.message);
       console.log(`[${symbol}] Reconnecting in ${currentReconnectDelay / 1000}s...`);
       return timer(currentReconnectDelay).pipe(
         tap(() => {
@@ -156,30 +180,38 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
             MAX_RECONNECT_DELAY * 1000
           );
         }),
-        switchMap(() => connect())
+        switchMap(() => connectionStream$)
       );
+    })
+  );
+
+  // Handle manual reconnects
+  const reconnectStream$ = manualReconnect$.pipe(
+    switchMap(() => {
+      console.log(`[${symbol}] Manual reconnect triggered...`);
+      currentReconnectDelay = RECONNECT_DELAY * 1000; // Reset delay on manual reconnect
+      return connectionStream$;
     }),
     takeUntil(shutdown$)
-  ).subscribe({
+  );
+
+  // Subscribe to both streams
+  reconnectStream$.subscribe({
     error: (err) => console.error(`[${symbol}] Fatal error in reconnect stream:`, err.message),
-    complete: () => console.log(`[${symbol}] Connection stream completed`)
+    complete: () => console.log(`[${symbol}] Reconnect stream completed`)
   });
 
-  // Start initial connection with auto-reconnect on completion
-  const startConnection = () => {
-    connect().subscribe({
-      complete: () => {
-        console.log(`[${symbol}] Connection completed, triggering reconnect...`);
-        manualReconnect$.next();
-      },
-      error: (err) => {
-        console.error(`[${symbol}] Connection error:`, err.message);
-        manualReconnect$.next();
-      }
-    });
-  };
-
-  startConnection();
+  // Start initial connection
+  connectionStream$.subscribe({
+    complete: () => {
+      console.log(`[${symbol}] Connection stream completed, triggering reconnect...`);
+      manualReconnect$.next();
+    },
+    error: (err) => {
+      console.error(`[${symbol}] Initial connection error:`, err.message);
+      manualReconnect$.next();
+    }
+  });
 }
 
 // --- 5. Multi-Symbol WebSocket Manager ---
@@ -189,7 +221,34 @@ class WebSocketManager {
     this.settings = settings;
     this.shutdown$ = new Subject();
     this.reconnectSubjects = new Map(); // Map<symbol, Subject>
+    this.symbolShutdowns = new Map(); // Map<symbol, Subject> - for individual symbol shutdown
+    this.symbolIndices = new Map(); // Map<symbol, index> - persistent indices for Redis keys
     this.watcher = null;
+
+    // Initialize symbol indices
+    this.initializeSymbolIndices();
+  }
+
+  initializeSymbolIndices() {
+    // Assign persistent indices to symbols
+    this.settings.SYMBOLS_LIST.forEach((symbol, index) => {
+      this.symbolIndices.set(symbol, index);
+    });
+  }
+
+  getSymbolIndex(symbol) {
+    // Get existing index or assign new one
+    if (!this.symbolIndices.has(symbol)) {
+      // Find the next available index
+      const usedIndices = new Set(this.symbolIndices.values());
+      let nextIndex = 0;
+      while (usedIndices.has(nextIndex)) {
+        nextIndex++;
+      }
+      this.symbolIndices.set(symbol, nextIndex);
+      console.log(`[${symbol}] Assigned new persistent index: ${nextIndex}`);
+    }
+    return this.symbolIndices.get(symbol);
   }
 
   async start() {
@@ -237,13 +296,23 @@ class WebSocketManager {
           console.log(`  ⟳ Reconnecting symbols: ${remained.join(", ")}`);
         }
 
-        // Stop removed symbols
+        // Stop removed symbols (but keep their indices for potential re-add)
         for (const symbol of removed) {
+          const symbolShutdown$ = this.symbolShutdowns.get(symbol);
+          if (symbolShutdown$) {
+            symbolShutdown$.next();
+            symbolShutdown$.complete();
+            this.symbolShutdowns.delete(symbol);
+          }
+
           const reconnect$ = this.reconnectSubjects.get(symbol);
           if (reconnect$) {
             reconnect$.complete();
             this.reconnectSubjects.delete(symbol);
           }
+
+          // Note: We intentionally keep symbolIndices to maintain consistency
+          // If symbol is re-added later, it will use the same Redis key
         }
 
         // Update settings
@@ -259,7 +328,7 @@ class WebSocketManager {
 
         // Start new symbols
         for (const symbol of added) {
-          const index = this.settings.SYMBOLS_LIST.indexOf(symbol);
+          const index = this.getSymbolIndex(symbol);
           this.startSymbolConnection(symbol, index);
         }
 
@@ -276,22 +345,26 @@ class WebSocketManager {
 
   startAllConnections() {
     console.log(`\n🚀 Starting WebSocket connections for ${this.settings.SYMBOLS_LIST.length} symbols...\n`);
-    
-    this.settings.SYMBOLS_LIST.forEach((symbol, index) => {
+
+    this.settings.SYMBOLS_LIST.forEach((symbol) => {
+      const index = this.getSymbolIndex(symbol);
       this.startSymbolConnection(symbol, index);
     });
   }
 
   startSymbolConnection(symbol, index) {
     const reconnect$ = new Subject();
+    const symbolShutdown$ = new Subject();
+
     this.reconnectSubjects.set(symbol, reconnect$);
+    this.symbolShutdowns.set(symbol, symbolShutdown$);
 
     createSymbolConnection(
       symbol,
       index,
       this.redisClient,
       reconnect$,
-      this.shutdown$
+      merge(symbolShutdown$, this.shutdown$)
     );
   }
 
@@ -308,6 +381,12 @@ class WebSocketManager {
         reconnect$.complete();
       }
       this.reconnectSubjects.clear();
+
+      // Complete all symbol shutdown subjects
+      for (const symbolShutdown$ of this.symbolShutdowns.values()) {
+        symbolShutdown$.complete();
+      }
+      this.symbolShutdowns.clear();
 
       // Close file watcher
       if (this.watcher) {
