@@ -32,7 +32,8 @@ node run.js
 - [x] v0.0.6 - created A_pre_start B_reset C_after_finish
 - [x] v0.0.7 - created screenshot.png
     - fxed redis websocket and A_get_candle[0]_from_redis
-    - added SSE method for web page live updates from csv file 
+    - added SSE method for web page live updates from csv file
+    - added tradingview style to froendend page 
 - [ ] v0.0.8 - get all other candles [0] and save in history file
 - [ ] v0.0.9 - check for each timeframe percent and trend 
 
@@ -42,7 +43,7 @@ node run.js
 
   ```Bash
   git add .
-  git commit -m "v0.0.7 - added SSE method for web page live updates from csv file"
+  git commit -m "v0.0.7 - added tradingview style to froendend page"
   git push
   ```
 

@@ -84,9 +84,8 @@ watcher.on('error', (error) => {
 // Express Routes
 // ================================================
 
-// Главная страница - redirect на monitor.html или serve напрямую
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'monitor.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Статические файлы (HTML, CSS, JS)

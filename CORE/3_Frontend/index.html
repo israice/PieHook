@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PieHook</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #131722;
+      color: #d1d4dc;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      background: #1e222d;
+      padding: 12px 16px;
+      border-bottom: 1px solid #2a2e39;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .symbol-display {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: background 0.2s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .symbol-display::after {
+      content: '▼';
+      font-size: 10px;
+      color: #787b86;
+    }
+
+    .symbol-display:hover {
+      background: #2a2e39;
+    }
+
+    .symbol-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 4px;
+      background: #1e222d;
+      border: 1px solid #2a2e39;
+      border-radius: 6px;
+      min-width: 150px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .symbol-dropdown.visible {
+      display: block;
+    }
+
+    .symbol-dropdown-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: #d1d4dc;
+    }
+
+    .symbol-dropdown-item:hover {
+      background: #2a2e39;
+    }
+
+    .symbol-dropdown-item.active {
+      background: #2962ff;
+      color: #fff;
+    }
+
+    .symbol-dropdown-item.active:hover {
+      background: #1e4fcc;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.disconnected {
+      background: #f44336;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #787b86;
+    }
+
+    .stat-item {
+      display: flex;
+      gap: 4px;
+    }
+
+    .stat-value {
+      color: #d1d4dc;
+      font-weight: 600;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .chart-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chart-container {
+      flex: 1;
+      display: flex;
+      position: relative;
+      background: #131722;
+    }
+
+    .chart-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .price-scale {
+      width: 60px;
+      background: #1e222d;
+      border-left: 1px solid #2a2e39;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-scale-help {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(30, 34, 45, 0.95);
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 9px;
+      color: #787b86;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .price-scale:hover .price-scale-help {
+      opacity: 1;
+    }
+
+    .time-scale {
+      height: 40px;
+      background: #1e222d;
+      border-top: 1px solid #2a2e39;
+      position: relative;
+      font-size: 11px;
+      color: #787b86;
+      cursor: ew-resize;
+    }
+
+    .time-label {
+      position: absolute;
+      bottom: 12px;
+      font-size: 11px;
+      color: #787b86;
+      font-family: 'Courier New', monospace;
+      transform: translateX(-50%);
+    }
+
+    .time-tick {
+      position: absolute;
+      top: 0;
+      width: 1px;
+      height: 6px;
+      background: #2a2e39;
+      transform: translateX(-50%);
+    }
+
+    .time-scale-help {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(30, 34, 45, 0.95);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 9px;
+      color: #787b86;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .time-scale:hover .time-scale-help {
+      opacity: 1;
+    }
+
+    .chart-area:hover {
+      cursor: crosshair;
+    }
+
+    .price-scale:hover {
+      cursor: ns-resize;
+    }
+
+    .price-label {
+      position: absolute;
+      right: 4px;
+      font-size: 11px;
+      color: #787b86;
+      font-family: 'Courier New', monospace;
+      white-space: nowrap;
+    }
+
+    .price-tick {
+      position: absolute;
+      left: 0;
+      width: 6px;
+      height: 1px;
+      background: #2a2e39;
+    }
+
+    .current-price-label {
+      position: absolute;
+      right: 0;
+      background: #2962ff;
+      color: #fff;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+      border-radius: 2px 0 0 2px;
+      z-index: 10;
+    }
+
+    .current-price-label.red {
+      background: #f23645;
+    }
+
+    .current-price-label.green {
+      background: #089981;
+    }
+
+    .candle-info {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(30, 34, 45, 0.95);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      line-height: 1.8;
+      z-index: 10;
+    }
+
+    .candle-info-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .candle-info-item {
+      display: flex;
+      gap: 4px;
+    }
+
+    .candle-info-label {
+      color: #787b86;
+    }
+
+    .candle-info-value {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .candle-info-value.green {
+      color: #089981;
+    }
+
+    .candle-info-value.red {
+      color: #f23645;
+    }
+
+
+    .zoom-indicator {
+      position: absolute;
+      bottom: 50px;
+      right: 80px;
+      background: rgba(30, 34, 45, 0.9);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #787b86;
+      font-family: 'Courier New', monospace;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .zoom-indicator.visible {
+      opacity: 1;
+    }
+
+    .zoom-indicator-label {
+      color: #fff;
+      margin-left: 4px;
+    }
+
+    .zoom-help {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(30, 34, 45, 0.8);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #787b86;
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .chart-area:hover .zoom-help {
+      opacity: 1;
+    }
+
+    .zoom-help-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 2px 0;
+    }
+
+    .zoom-help-key {
+      background: #2a2e39;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      font-size: 9px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <div style="position: relative;">
+          <div class="symbol-display" id="symbolDisplay">
+            <span id="symbolText">BTCUSDT</span>
+          </div>
+          <div class="symbol-dropdown" id="symbolDropdown"></div>
+        </div>
+        <div class="status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span>Last Update:</span>
+          <span class="stat-value" id="lastUpdate">-</span>
+        </div>
+        <div class="stat-item">
+          <span>Symbols:</span>
+          <span class="stat-value" id="symbolCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="chart-section">
+        <div class="chart-container">
+          <div class="chart-area">
+            <canvas id="chartCanvas"></canvas>
+            <div class="zoom-indicator" id="zoomIndicator">
+              Zoom: <span class="zoom-indicator-label" id="zoomValue">100%</span>
+            </div>
+            <div class="zoom-help">
+              <div class="zoom-help-item">
+                <span class="zoom-help-key">Scroll</span>
+                <span>Zoom Time</span>
+              </div>
+              <div class="zoom-help-item">
+                <span class="zoom-help-key">Alt+R</span>
+                <span>Reset</span>
+              </div>
+            </div>
+            <div class="candle-info">
+              <div class="candle-info-row">
+                <div class="candle-info-item">
+                  <span class="candle-info-label">O</span>
+                  <span class="candle-info-value" id="infoOpen">-</span>
+                </div>
+                <div class="candle-info-item">
+                  <span class="candle-info-label">H</span>
+                  <span class="candle-info-value" id="infoHigh">-</span>
+                </div>
+                <div class="candle-info-item">
+                  <span class="candle-info-label">L</span>
+                  <span class="candle-info-value" id="infoLow">-</span>
+                </div>
+                <div class="candle-info-item">
+                  <span class="candle-info-label">C</span>
+                  <span class="candle-info-value" id="infoClose">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="price-scale" id="priceScale">
+            <div class="price-scale-help">Scroll to<br/>Zoom Price</div>
+          </div>
+        </div>
+        <div class="time-scale" id="timeScale">
+          <div class="time-scale-help">Scroll to Zoom Time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    const priceScale = document.getElementById('priceScale');
+    const timeScale = document.getElementById('timeScale');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const zoomIndicator = document.getElementById('zoomIndicator');
+    const zoomValue = document.getElementById('zoomValue');
+    const symbolDisplay = document.getElementById('symbolDisplay');
+    const symbolText = document.getElementById('symbolText');
+    const symbolDropdown = document.getElementById('symbolDropdown');
+
+    let eventSource = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    let currentCandle = null;
+    let allCandles = [];
+    let priceRange = { min: 0, max: 0 };
+    let lastUpdateTime = null;
+    let updateCheckInterval = null;
+
+    // Zoom settings
+    let candleWidth = 60;
+    let priceZoomFactor = 1.0;
+    const MIN_CANDLE_WIDTH = 20;
+    const MAX_CANDLE_WIDTH = 200;
+    const MIN_PRICE_ZOOM = 0.5;
+    const MAX_PRICE_ZOOM = 3.0;
+
+    let zoomIndicatorTimeout = null;
+
+    function showZoomIndicator(type) {
+      let percentage;
+      if (type === 'price') {
+        percentage = Math.round(priceZoomFactor * 100);
+        zoomValue.textContent = `Price ${percentage}%`;
+      } else {
+        percentage = Math.round((candleWidth / 60) * 100);
+        zoomValue.textContent = `Time ${percentage}%`;
+      }
+
+      zoomIndicator.classList.add('visible');
+
+      if (zoomIndicatorTimeout) clearTimeout(zoomIndicatorTimeout);
+      zoomIndicatorTimeout = setTimeout(() => {
+        zoomIndicator.classList.remove('visible');
+      }, 1500);
+    }
+
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+      drawChart();
+    }
+
+    function connectSSE() {
+      eventSource = new EventSource('/events');
+
+      eventSource.onopen = () => {
+        console.log('SSE Connected');
+        statusDot.classList.remove('disconnected');
+        statusText.textContent = 'Connected';
+        reconnectAttempts = 0;
+
+        if (updateCheckInterval) clearInterval(updateCheckInterval);
+        updateCheckInterval = setInterval(() => {
+          if (lastUpdateTime) {
+            const timeSinceUpdate = Date.now() - lastUpdateTime;
+            if (timeSinceUpdate > 3000) {
+              statusText.textContent = 'Disconnected';
+              statusDot.classList.add('disconnected');
+            } else {
+              statusText.textContent = 'Connected';
+              statusDot.classList.remove('disconnected');
+            }
+          }
+        }, 1000);
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          lastUpdateTime = Date.now();
+          statusText.textContent = 'Connected';
+          statusDot.classList.remove('disconnected');
+          updateDisplay(data);
+        } catch (error) {
+          console.error('Error parsing SSE data:', error);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
+        statusDot.classList.add('disconnected');
+        statusText.textContent = 'Disconnected';
+
+        if (updateCheckInterval) {
+          clearInterval(updateCheckInterval);
+          updateCheckInterval = null;
+        }
+
+        eventSource.close();
+
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+          statusText.textContent = `Reconnecting in ${delay/1000}s...`;
+          setTimeout(connectSSE, delay);
+        } else {
+          statusText.textContent = 'Connection failed';
+        }
+      };
+    }
+
+    function updateDisplay(data) {
+      const { headers, rows, timestamp } = data;
+
+      document.getElementById('lastUpdate').textContent = new Date(timestamp).toLocaleTimeString();
+      document.getElementById('symbolCount').textContent = rows.length;
+
+      if (rows.length === 0) {
+        return;
+      }
+
+      allCandles = rows.map((row, index) => ({
+        symbol: index === 0 ? 'XRPUSDT' : 'BTCUSDT',
+        open: parseFloat(row.Open_price),
+        high: parseFloat(row.High_price),
+        low: parseFloat(row.Low_price),
+        close: parseFloat(row.Close_price),
+        volume: parseFloat(row.Volume),
+        time: row.Open_time
+      }));
+
+      if (allCandles.length > 0) {
+        // Если текущая свеча не выбрана, выбираем первую
+        if (!currentCandle) {
+          currentCandle = allCandles[0];
+        } else {
+          // Обновляем данные текущей свечи
+          const updated = allCandles.find(c => c.symbol === currentCandle.symbol);
+          if (updated) {
+            currentCandle = updated;
+          } else {
+            currentCandle = allCandles[0];
+          }
+        }
+
+        updateSymbolDisplay();
+        updateChartCandle();
+        updateInfoPanel();
+        updateSymbolDropdown();
+      }
+    }
+
+    function updateSymbolDisplay() {
+      symbolText.textContent = currentCandle.symbol;
+    }
+
+    function updateSymbolDropdown() {
+      symbolDropdown.innerHTML = '';
+
+      allCandles.forEach((candle) => {
+        const item = document.createElement('div');
+        item.className = 'symbol-dropdown-item';
+        if (candle.symbol === currentCandle.symbol) {
+          item.classList.add('active');
+        }
+        item.textContent = candle.symbol;
+
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          selectSymbol(candle.symbol);
+          symbolDropdown.classList.remove('visible');
+        });
+
+        symbolDropdown.appendChild(item);
+      });
+    }
+
+    function selectSymbol(symbol) {
+      const candle = allCandles.find(c => c.symbol === symbol);
+      if (candle) {
+        currentCandle = candle;
+        updateSymbolDisplay();
+        updateChartCandle();
+        updateInfoPanel();
+        updateSymbolDropdown();
+      }
+    }
+
+    // Toggle dropdown при клике на символ
+    symbolDisplay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      symbolDropdown.classList.toggle('visible');
+    });
+
+    // Закрываем dropdown при клике вне его
+    document.addEventListener('click', () => {
+      symbolDropdown.classList.remove('visible');
+    });
+
+    function updateChartCandle() {
+      if (!currentCandle) return;
+
+      const prices = [currentCandle.open, currentCandle.high, currentCandle.low, currentCandle.close];
+      const baseMargin = (Math.max(...prices) - Math.min(...prices)) * 0.2;
+      const margin = baseMargin / priceZoomFactor;
+
+      priceRange.min = Math.min(...prices) - margin;
+      priceRange.max = Math.max(...prices) + margin;
+
+      drawChart();
+      updatePriceScale();
+      updateTimeScale();
+    }
+
+    function updateInfoPanel() {
+      if (!currentCandle) return;
+
+      const isGreen = currentCandle.close >= currentCandle.open;
+      const colorClass = isGreen ? 'green' : 'red';
+
+      document.getElementById('infoOpen').textContent = currentCandle.open.toFixed(4);
+      document.getElementById('infoHigh').textContent = currentCandle.high.toFixed(4);
+      document.getElementById('infoLow').textContent = currentCandle.low.toFixed(4);
+
+      const closeElement = document.getElementById('infoClose');
+      closeElement.textContent = currentCandle.close.toFixed(4);
+      closeElement.className = `candle-info-value ${colorClass}`;
+    }
+
+    function drawChart() {
+      if (!currentCandle) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawCandle();
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = '#2a2e39';
+      ctx.lineWidth = 1;
+
+      const gridLines = 10;
+      for (let i = 0; i <= gridLines; i++) {
+        const y = (canvas.height / gridLines) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      const verticalLines = 8;
+      for (let i = 0; i <= verticalLines; i++) {
+        const x = (canvas.width / verticalLines) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+    }
+
+    function priceToY(price) {
+      const range = priceRange.max - priceRange.min;
+      return canvas.height - ((price - priceRange.min) / range) * canvas.height;
+    }
+
+    function drawCandle() {
+      const centerX = canvas.width / 2;
+      const isGreen = currentCandle.close >= currentCandle.open;
+
+      const highY = priceToY(currentCandle.high);
+      const lowY = priceToY(currentCandle.low);
+      const openY = priceToY(currentCandle.open);
+      const closeY = priceToY(currentCandle.close);
+
+      ctx.strokeStyle = isGreen ? '#089981' : '#f23645';
+      ctx.fillStyle = isGreen ? '#089981' : '#f23645';
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, highY);
+      ctx.lineTo(centerX, lowY);
+      ctx.stroke();
+
+      const bodyTop = Math.min(openY, closeY);
+      const bodyHeight = Math.abs(closeY - openY);
+
+      if (bodyHeight < 1) {
+        ctx.fillRect(centerX - candleWidth / 2, bodyTop - 1, candleWidth, 2);
+      } else {
+        ctx.fillRect(centerX - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+      }
+
+      ctx.strokeStyle = isGreen ? '#089981' : '#f23645';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(centerX - candleWidth / 2, bodyTop, candleWidth, bodyHeight || 2);
+    }
+
+    function updatePriceScale() {
+      if (!currentCandle) return;
+
+      priceScale.innerHTML = '<div class="price-scale-help">Scroll to<br/>Zoom Price</div>';
+
+      const labelCount = 10;
+      const range = priceRange.max - priceRange.min;
+
+      for (let i = 0; i <= labelCount; i++) {
+        const price = priceRange.min + (range * i / labelCount);
+        const y = canvas.height - ((price - priceRange.min) / range) * canvas.height;
+
+        // Добавляем тик (маленькую горизонтальную линию)
+        const tick = document.createElement('div');
+        tick.className = 'price-tick';
+        tick.style.top = `${y}px`;
+        priceScale.appendChild(tick);
+
+        // Добавляем ценовую метку
+        const label = document.createElement('div');
+        label.className = 'price-label';
+        label.textContent = price.toFixed(4);
+        label.style.top = `${y - 6}px`;
+        priceScale.appendChild(label);
+      }
+
+      const currentPriceY = priceToY(currentCandle.close);
+      const currentLabel = document.createElement('div');
+      currentLabel.className = `current-price-label ${currentCandle.close >= currentCandle.open ? 'green' : 'red'}`;
+      currentLabel.textContent = currentCandle.close.toFixed(4);
+      currentLabel.style.top = `${currentPriceY - 10}px`;
+      priceScale.appendChild(currentLabel);
+    }
+
+    function updateTimeScale() {
+      if (!currentCandle) return;
+
+      timeScale.innerHTML = '<div class="time-scale-help">Scroll to Zoom Time</div>';
+
+      const currentTime = new Date(currentCandle.time);
+      const labelCount = 8; // Количество временных меток
+
+      // Динамический интервал в зависимости от zoom
+      const baseInterval = 5; // Базовый интервал в минутах
+      const intervalMinutes = Math.max(1, Math.round(baseInterval * (60 / candleWidth)));
+
+      // Создаем временные метки распределенные по ширине
+      for (let i = 0; i < labelCount; i++) {
+        const offsetMinutes = (i - Math.floor(labelCount / 2)) * intervalMinutes;
+        const time = new Date(currentTime.getTime() + offsetMinutes * 60000);
+        const x = (canvas.width / (labelCount - 1)) * i;
+
+        // Добавляем тик (маленькую вертикальную линию)
+        const tick = document.createElement('div');
+        tick.className = 'time-tick';
+        tick.style.left = `${x}px`;
+        timeScale.appendChild(tick);
+
+        // Добавляем временную метку
+        const label = document.createElement('div');
+        label.className = 'time-label';
+        label.textContent = time.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        label.style.left = `${x}px`;
+
+        // Подсветка текущего времени
+        if (i === Math.floor(labelCount / 2)) {
+          label.style.color = '#d1d4dc';
+          label.style.fontWeight = '600';
+        }
+
+        timeScale.appendChild(label);
+      }
+    }
+
+
+    // Zoom на графике (время/ширина свечей)
+    canvas.parentElement.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      const delta = e.deltaY;
+      const zoomSpeed = 0.1;
+
+      if (delta < 0) {
+        // Zoom in (приближение)
+        candleWidth = Math.min(candleWidth * (1 + zoomSpeed), MAX_CANDLE_WIDTH);
+      } else {
+        // Zoom out (отдаление)
+        candleWidth = Math.max(candleWidth * (1 - zoomSpeed), MIN_CANDLE_WIDTH);
+      }
+
+      showZoomIndicator('time');
+      drawChart();
+      updateTimeScale();
+    }, { passive: false });
+
+    // Zoom на ценовой шкале (вертикальный)
+    priceScale.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      const delta = e.deltaY;
+      const zoomSpeed = 0.1;
+
+      if (delta < 0) {
+        // Zoom in (приближение)
+        priceZoomFactor = Math.min(priceZoomFactor * (1 + zoomSpeed), MAX_PRICE_ZOOM);
+      } else {
+        // Zoom out (отдаление)
+        priceZoomFactor = Math.max(priceZoomFactor * (1 - zoomSpeed), MIN_PRICE_ZOOM);
+      }
+
+      showZoomIndicator('price');
+      updateChartCandle();
+    }, { passive: false });
+
+    // Zoom на временной шкале (горизонтальный)
+    timeScale.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      const delta = e.deltaY;
+      const zoomSpeed = 0.1;
+
+      if (delta < 0) {
+        // Zoom in (приближение)
+        candleWidth = Math.min(candleWidth * (1 + zoomSpeed), MAX_CANDLE_WIDTH);
+      } else {
+        // Zoom out (отдаление)
+        candleWidth = Math.max(candleWidth * (1 - zoomSpeed), MIN_CANDLE_WIDTH);
+      }
+
+      showZoomIndicator('time');
+      drawChart();
+      updateTimeScale();
+    }, { passive: false });
+
+    // Reset zoom с Alt+R или Option+R
+    window.addEventListener('keydown', (e) => {
+      if ((e.altKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        candleWidth = 60;
+        priceZoomFactor = 1.0;
+        updateChartCandle();
+        showZoomIndicator('time');
+      }
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    connectSSE();
+
+    window.addEventListener('beforeunload', () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    });
+  </script>
+</body>
+</html>
