@@ -1,5 +1,4 @@
 # User Settings Configuration File
-REDIS_PORT: 6379
 SYMBOLS_LIST:
   - XRPUSDT
-  - BTCUSDT
+  # - BTCUSDT

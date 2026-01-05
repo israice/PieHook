@@ -10,6 +10,11 @@ import { mergeMap, tap, takeUntil, switchMap, catchError, finalize } from "rxjs/
 const SETTINGS_FILE = "./settings.yaml";
 const BINANCE_WS_BASE = "wss://fstream.binance.com/ws/";
 const REDIS_HOST = "redis";
+const REDIS_PORT = 6379;
+const REDIS_DB = 0;
+const RECONNECT_DELAY = 3;
+const MAX_RECONNECT_DELAY = 60;
+const RECONNECT_AFTER_HOURS = 23;
 
 // --- 1. Load Settings ---
 async function loadSettings() {
@@ -17,21 +22,9 @@ async function loadSettings() {
     const data = await fs.readFile(SETTINGS_FILE, "utf8");
     const settings = YAML.parse(data) || {};
 
-    // Validate required fields
-    if (!settings.REDIS_PORT) {
-      throw new Error("REDIS_PORT is required in settings.yaml");
-    }
-
     if (!settings.SYMBOLS_LIST || !Array.isArray(settings.SYMBOLS_LIST) || settings.SYMBOLS_LIST.length === 0) {
       throw new Error("SYMBOLS_LIST must be a non-empty array in settings.yaml");
     }
-
-    // Set defaults
-    settings.REDIS_HOST = settings.REDIS_HOST || REDIS_HOST;
-    settings.REDIS_DB = settings.REDIS_DB || 0;
-    settings.RECONNECT_DELAY = settings.RECONNECT_DELAY || 3;
-    settings.MAX_RECONNECT_DELAY = settings.MAX_RECONNECT_DELAY || 60;
-    settings.RECONNECT_AFTER_HOURS = settings.RECONNECT_AFTER_HOURS || 23;
 
     console.log(`✓ Settings loaded: ${settings.SYMBOLS_LIST.length} symbols configured`);
     return settings;
@@ -42,22 +35,21 @@ async function loadSettings() {
 }
 
 // --- 2. Create Redis Client ---
-async function createRedisClient(settings) {
+async function createRedisClient() {
   const client = Redis.createClient({
     socket: {
-      host: settings.REDIS_HOST,
-      port: settings.REDIS_PORT,
-      reconnectStrategy: (retries) =>
-        Math.min(retries * 100, settings.MAX_RECONNECT_DELAY * 1000),
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      reconnectStrategy: (retries) => Math.min(retries * 100, MAX_RECONNECT_DELAY * 1000),
     },
-    database: settings.REDIS_DB,
+    database: REDIS_DB,
   });
 
   client.on("error", (err) => console.error("Redis error:", err.message));
-  
+
   await client.connect();
-  console.log(`✓ Connected to Redis at ${settings.REDIS_HOST}:${settings.REDIS_PORT}`);
-  
+  console.log(`✓ Connected to Redis at ${REDIS_HOST}:${REDIS_PORT}`);
+
   return client;
 }
 
@@ -76,11 +68,11 @@ async function handleMessage(msg, redisClient, redisKey, symbol) {
 }
 
 // --- 4. Create WebSocket Connection for Single Symbol ---
-function createSymbolConnection(symbol, index, redisClient, settings, manualReconnect$, shutdown$) {
+function createSymbolConnection(symbol, index, redisClient, manualReconnect$, shutdown$) {
   const url = `${BINANCE_WS_BASE}${symbol.toLowerCase()}@kline_1m`;
   const redisKey = `new_1m_candle_${index}`;
 
-  let currentReconnectDelay = settings.RECONNECT_DELAY * 1000;
+  let currentReconnectDelay = RECONNECT_DELAY * 1000;
   let connectionCount = 0; // Track connections for rate limit (300 per 5 min)
   let connectionTimestamps = [];
 
@@ -102,14 +94,14 @@ function createSymbolConnection(symbol, index, redisClient, settings, manualReco
       const ws = new WebSocket(url);
 
       // Auto-reconnect timer (23 hours by default - Binance disconnects at 24h)
-      const periodicReconnect$ = timer(settings.RECONNECT_AFTER_HOURS * 3600 * 1000).pipe(
-        tap(() => console.log(`[${symbol}] ${settings.RECONNECT_AFTER_HOURS}h limit reached. Reconnecting...`))
+      const periodicReconnect$ = timer(RECONNECT_AFTER_HOURS * 3600 * 1000).pipe(
+        tap(() => console.log(`[${symbol}] ${RECONNECT_AFTER_HOURS}h limit reached. Reconnecting...`))
       );
 
       const open$ = fromEvent(ws, "open").pipe(
         tap(() => {
           console.log(`[${symbol}] ✓ Connected at ${new Date().toISOString()}`);
-          currentReconnectDelay = settings.RECONNECT_DELAY * 1000; // Reset delay on success
+          currentReconnectDelay = RECONNECT_DELAY * 1000; // Reset delay on success
         })
       );
 
@@ -161,7 +153,7 @@ function createSymbolConnection(symbol, index, redisClient, settings, manualReco
           // Increase delay for next reconnection (exponential backoff)
           currentReconnectDelay = Math.min(
             currentReconnectDelay * 2,
-            settings.MAX_RECONNECT_DELAY * 1000
+            MAX_RECONNECT_DELAY * 1000
           );
         }),
         switchMap(() => connect())
@@ -298,7 +290,6 @@ class WebSocketManager {
       symbol,
       index,
       this.redisClient,
-      this.settings,
       reconnect$,
       this.shutdown$
     );
@@ -344,10 +335,10 @@ class WebSocketManager {
   console.log("═══════════════════════════════════════════════════\n");
 
   const settings = await loadSettings();
-  const redisClient = await createRedisClient(settings);
+  const redisClient = await createRedisClient();
 
   console.log(`Settings file: ${SETTINGS_FILE}`);
-  console.log(`Redis: ${settings.REDIS_HOST}:${settings.REDIS_PORT}/${settings.REDIS_DB}`);
+  console.log(`Redis: ${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}`);
   console.log(`Symbols: ${settings.SYMBOLS_LIST.join(", ")}\n`);
 
   const manager = new WebSocketManager(redisClient, settings);

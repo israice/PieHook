@@ -10,10 +10,10 @@ const SETTINGS_FILE = './settings.yaml';
 
 const settings = yaml.load(fs.readFileSync(SETTINGS_FILE, 'utf8'));
 
-const REDIS_HOST = settings.REDIS_HOST || 'localhost';
-const REDIS_PORT = settings.REDIS_PORT || 6379;
-const REDIS_DB   = settings.REDIS_DB   || 0;
-const SYMBOLS_LIST = settings.SYMBOLS_LIST || [];
+const REDIS_HOST = 'localhost';
+const REDIS_PORT = 6379;
+const REDIS_DB   = 0;
+const SYMBOLS_LIST = settings.SYMBOLS_LIST;
 
 const OUTPUT_CSV = 'CORE/4_Data/A_1m_candle[0].csv';
 
@@ -98,7 +98,6 @@ async function get_candle_from_redis() {
       ].join(',');
 
       csvRows.push(csvRow);
-      console.log(`✓ [${symbol}] Свеча прочитана из Redis`);
     }
 
     if (csvRows.length === 0) {
@@ -107,18 +106,13 @@ async function get_candle_from_redis() {
       return;
     }
 
-    // Запись всех строк разом (атомарно)
-    const tempFile = `${OUTPUT_CSV}.tmp.${process.pid}.${Date.now()}`;
+    // Запись всех строк разом (прямая перезапись)
     const content = `${CSV_HEADERS}\n${csvRows.join('\n')}`;
 
     try {
-      fs.writeFileSync(tempFile, content, { mode: 0o644 });
-      fs.renameSync(tempFile, OUTPUT_CSV);
-      console.log(`\n✅ Записано ${csvRows.length} свечей в ${OUTPUT_CSV}`);
+      fs.writeFileSync(OUTPUT_CSV, content, { encoding: 'utf8', flag: 'w' });
+      console.log(`✅ Start...`);
     } catch (err) {
-      try {
-        fs.unlinkSync(tempFile);
-      } catch {}
       throw err;
     }
 

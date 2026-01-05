@@ -1,17 +1,22 @@
 ## PieHook-JS
 
-![alt text](screenshot.png)
+### Last Dev Update
 
+- v0.0.7 - added SSE method for web page live updates from csv file
 
+<div align="center">
+  <img src="CORE/4_Data/DEV_SCREENSHOTS/v0.0.7.png" alt="Dashboard" height="300">
+</div>
+![alt text](image.png)
 
 ### Before start
 npm install ws redis yaml rxjs node-fetch js-yaml
 
 ### Run Redis Docker
-docker-compose up -d --build
+docker-compose up --build -d
 
 ### Show Websocket in Dcoker
-docker-compose logs -f websocket_client
+docker-compose logs -f piehook
 
 ### Run the checks
 node run.js
@@ -27,6 +32,7 @@ node run.js
 - [x] v0.0.6 - created A_pre_start B_reset C_after_finish
 - [x] v0.0.7 - created screenshot.png
     - fxed redis websocket and A_get_candle[0]_from_redis
+    - added SSE method for web page live updates from csv file 
 - [ ] v0.0.8 - get all other candles [0] and save in history file
 - [ ] v0.0.9 - check for each timeframe percent and trend 
 
@@ -36,14 +42,14 @@ node run.js
 
   ```Bash
   git add .
-  git commit -m "v0.0.7 - fxed redis websocket and A_get_candle[0]_from_redis"
+  git commit -m "v0.0.7 - added SSE method for web page live updates from csv file"
   git push
   ```
 
-  
   ```Powershell
   git log --oneline -n 10
   ```
+
   ```Powershell
   Copy-Item .env $env:TEMP\.env.backup
   git reset --hard de8b98f

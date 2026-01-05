@@ -1,5 +1,8 @@
+name: piehook
+
 services:
   redis:
+    container_name: PieHook-Redis
     image: "redis:alpine"
     ports:
       - "6379:6379"
@@ -14,25 +17,35 @@ services:
       timeout: 5s
       retries: 5
 
-  websocket_client:
-    build: .
+  frontend:
+    container_name: PieHook-Frontend
+    build:
+      context: .
+      dockerfile: CORE/3_Frontend/Dockerfile
     depends_on:
       redis:
         condition: service_healthy
+    ports:
+      - "3000:3000"
     volumes:
-      - ./CORE/1_Redis:/app/CORE/1_Redis:delegated
+      - ./CORE/1_Redis:/app/CORE/1_Redis
+      - ./CORE/3_Frontend:/app/CORE/3_Frontend
+      - ./CORE/4_Data:/app/CORE/4_Data
+      - ./settings.yaml:/app/settings.yaml:ro
     networks:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f websocket.js || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
 # сеть для взаимодействия между контейнерами
 networks:
   app-network:
     driver: bridge
+
 volumes:
   redis-data:
