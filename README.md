@@ -68,7 +68,7 @@ node run.js
 
   ```Bash
   git add .
-  git commit -m "v0.0.7 - added docker-compose.prod.yml"
+  git commit -m "v0.0.7 - test"
   git push
   ```
 
