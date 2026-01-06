@@ -82,7 +82,7 @@ node run.js
 
 ```Bash
 git add .
-git commit -m "v0.0.16 - testing version change 6"
+git commit -m "v0.0.16 - testing version change 7"
 git push
 ```
 
