@@ -88,6 +88,7 @@ services:
     environment:
       - AUTOUPDATE_WEBHOOK_FROM_GITHUB=${AUTOUPDATE_WEBHOOK_FROM_GITHUB}
       - FRONTEND_INDEX_PAGE=CORE/3_Frontend
+      - HOST_PROJECT_PATH=${PWD}
     networks:
       - app-network
 
