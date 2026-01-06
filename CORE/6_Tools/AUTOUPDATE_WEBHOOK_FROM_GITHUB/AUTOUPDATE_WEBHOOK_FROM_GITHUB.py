@@ -87,13 +87,23 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             # Using modern docker compose (v2) command
             # IMPORTANT: We use HOST_PROJECT_PATH for docker compose because when running via docker.sock,
             # Docker needs paths relative to the HOST filesystem, not the container's /app
+
+            # First, update backend and frontend
             print(f"Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build backend frontend", flush=True)
             subprocess.check_call(
                 ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "backend", "frontend"],
                 cwd=HOST_PROJECT_PATH,
                 stderr=subprocess.STDOUT
             )
-            
+
+            # Then, update webhook container itself (will cause this script to restart)
+            print(f"Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build autoupdate-webhook", flush=True)
+            subprocess.check_call(
+                ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "autoupdate-webhook"],
+                cwd=HOST_PROJECT_PATH,
+                stderr=subprocess.STDOUT
+            )
+
             print("Update completed successfully.", flush=True)
             
         except subprocess.CalledProcessError as e:
