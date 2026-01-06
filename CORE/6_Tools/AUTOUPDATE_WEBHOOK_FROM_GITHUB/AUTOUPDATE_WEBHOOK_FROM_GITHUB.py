@@ -12,10 +12,22 @@ UpdateLock = threading.Lock()
 
 class WebhookHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
-        if self.path != "/push_and_update_server":
+        # Allow both GitHub webhook path and simple token-based path
+        webhook_token_path = f"/webhook/{SECRET.decode('utf-8')}" if SECRET else None
+
+        if self.path == "/push_and_update_server":
+            # GitHub webhook path - requires signature verification
+            self._handle_github_webhook()
+        elif webhook_token_path and self.path == webhook_token_path:
+            # Simple token-based path - no signature required
+            print(f"Received request on token path: {self.path}", flush=True)
+            self._trigger_update()
+        else:
             self.send_error(404, "Not Found")
             return
 
+    def _handle_github_webhook(self):
+        """Handle GitHub webhook with signature verification"""
         # Get headers
         content_length = int(self.headers.get("Content-Length", 0))
         hub_signature = self.headers.get("X-Hub-Signature")
@@ -28,7 +40,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             if not hub_signature:
                 self.send_error(403, "Forbidden: Missing Signature")
                 return
-            
+
             sha_name, signature = hub_signature.split('=')
             if sha_name != 'sha1':
                 self.send_error(501, "Not Implemented: Only SHA1 supported")
@@ -41,6 +53,10 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
 
         # Process payload (optional: check for specific branch)
         # For now, we just trigger the update for any push event
+        self._trigger_update()
+
+    def _trigger_update(self):
+        """Trigger the update process"""
         
         # Respond immediately to avoid GitHub timeout
         self.send_response(200)
@@ -89,8 +105,12 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     # Ensure we are in the right directory (though Docker workdir should handle this)
-    # os.chdir("/app") 
-    
+    # os.chdir("/app")
+
     with socketserver.TCPServer(("", PORT), WebhookHandler) as httpd:
         print(f"Webhook listener serving at port {PORT}", flush=True)
+        print(f"Available endpoints:", flush=True)
+        print(f"  - POST /push_and_update_server (GitHub webhook with signature)", flush=True)
+        if SECRET:
+            print(f"  - POST /webhook/{SECRET.decode('utf-8')} (Simple token-based)", flush=True)
         httpd.serve_forever()
