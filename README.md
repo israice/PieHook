@@ -30,6 +30,7 @@
 
 <div align="center">
 <img src="CORE/4_Data/DEV_SCREENSHOTS/v0.0.7.png" alt="Dashboard" height="300">
+<img src="CORE/4_Data/DEV_SCREENSHOTS/v0.0.7-a.png" alt="Speed" height="300">
 </div>
 ![alt text](image.png)
 
@@ -71,8 +72,9 @@ node run.js
   - added tradingview style to froendend page 
   - added docker-compose.prod.yml
   - added AUTOUPDATE_WEBHOOK_FROM_GITHUB
-- [ ] v0.0.8 - get all other candles [0] and save in history file
-- [ ] v0.0.9 - check for each timeframe percent and trend 
+- [x] v0.0.8 - added version
+- [ ] v0.0.9 - get all other candles [0] and save in history file
+- [ ] v0.0.10 - check for each timeframe percent and trend 
 
 
 
@@ -80,7 +82,7 @@ node run.js
 
 ```Bash
 git add .
-git commit -m "v0.0.7 - test1 AUTOUPDATE_WEBHOOK_FROM_GITHUB"
+git commit -m "v0.0.8 - added version"
 git push
 ```
 
