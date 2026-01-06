@@ -3,6 +3,8 @@ import { before_first_start } from "./CORE/2_Backend/A_BEFORE_FIRST_START/A_chec
 import { backend_runner } from "./CORE/2_Backend/A_backend.js";
 import { run_after_finish } from "./CORE/2_Backend/A_RESET/C_after_finish/C_run.js";
 import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
 
 const LOOP_DELAY_MS = 500;
 let loopMode = true;
@@ -56,6 +58,66 @@ async function ensureDockerRedisRunning() {
   // Ждём пока Redis и Frontend будут готовы
   console.log("⏳ Waiting for services to be ready...");
   await new Promise((resolve) => setTimeout(resolve, 5000));
+}
+
+// ================================================
+// 🔄 СИНХРОНИЗАЦИЯ ВЕРСИИ
+// ================================================
+
+function syncVersionFromReadme() {
+  console.log("🔍 Checking version synchronization...");
+
+  try {
+    // 1. Читаем версию из README.md
+    const readmePath = path.join(process.cwd(), "README.md");
+    const readmeContent = fs.readFileSync(readmePath, "utf8");
+
+    // Ищем строку вида: git commit -m "v0.0.9 - ..."
+    const readmeMatch = readmeContent.match(/git commit -m "v(\d+\.\d+\.\d+)/);
+
+    if (!readmeMatch) {
+      console.log("⚠️  No version found in README.md");
+      return;
+    }
+
+    const readmeVersion = readmeMatch[1];
+    console.log(`📖 README.md version: v${readmeVersion}`);
+
+    // 2. Читаем текущую версию из index.html
+    const indexPath = path.join(process.cwd(), "CORE", "3_Frontend", "index.html");
+    let indexContent = fs.readFileSync(indexPath, "utf8");
+
+    // Ищем строку вида: <span class="stat-value" id="versionDisplay">v0.0.7</span>
+    const indexMatch = indexContent.match(/<span class="stat-value" id="versionDisplay">v(\d+\.\d+\.\d+)<\/span>/);
+
+    if (!indexMatch) {
+      console.log("⚠️  No version found in index.html");
+      return;
+    }
+
+    const currentVersion = indexMatch[1];
+    console.log(`🌐 Frontend version: v${currentVersion}`);
+
+    // 3. Сравниваем версии
+    if (currentVersion === readmeVersion) {
+      console.log("✅ Versions match - no update needed");
+      return;
+    }
+
+    // 4. Обновляем версию в index.html
+    console.log(`🔄 Updating frontend version: v${currentVersion} → v${readmeVersion}`);
+
+    const updatedContent = indexContent.replace(
+      /<span class="stat-value" id="versionDisplay">v\d+\.\d+\.\d+<\/span>/,
+      `<span class="stat-value" id="versionDisplay">v${readmeVersion}</span>`
+    );
+
+    fs.writeFileSync(indexPath, updatedContent, "utf8");
+    console.log("✅ Frontend version updated successfully");
+
+  } catch (error) {
+    console.error("❌ Error syncing version:", error.message);
+  }
 }
 
 // ================================================
@@ -117,6 +179,9 @@ async function runLoop() {
 async function main_runner() {
   // Проверяем и запускаем Docker Redis перед началом работы
   await ensureDockerRedisRunning();
+
+  // Синхронизируем версию из README.md в frontend
+  syncVersionFromReadme();
 
   await pre_start_list();
   if (!loopMode) {

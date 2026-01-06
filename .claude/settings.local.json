@@ -10,7 +10,9 @@
       "Bash(timeout:*)",
       "Bash(docker-compose logs:*)",
       "Bash(docker exec:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(node run.js:*)",
+      "Bash(pkill:*)"
     ]
   }
 }
