@@ -32,6 +32,10 @@ services:
       - ./CORE/3_Frontend:/app/CORE/3_Frontend
       - ./CORE/4_Data:/app/CORE/4_Data
       - ./settings.yaml:/app/settings.yaml:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MAX_CONNECTIONS_PER_5MIN=140
     networks:
       - app-network
     restart: unless-stopped

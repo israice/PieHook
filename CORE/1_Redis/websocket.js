@@ -16,6 +16,7 @@ const RECONNECT_DELAY = 3;
 const MAX_RECONNECT_DELAY = 60;
 const RECONNECT_AFTER_HOURS = 23;
 const HEALTH_CHECK_TIMEOUT = 5 * 60 * 1000; // 5 minutes without messages = dead connection
+const MAX_CONNECTIONS_PER_5MIN = parseInt(process.env.MAX_CONNECTIONS_PER_5MIN || "140", 10); // Default 140 for 2-server setup
 
 // --- 1. Load Settings ---
 async function loadSettings() {
@@ -79,13 +80,24 @@ function createSymbolConnection(symbol, index, redisClient, manualReconnect$, sh
 
   const connect = () => {
     return defer(() => {
-      // Check Binance rate limit: 300 connections per 5 minutes
+      // Check Binance rate limit: 300 connections per 5 minutes (configurable via MAX_CONNECTIONS_PER_5MIN)
       const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
       connectionTimestamps = connectionTimestamps.filter(t => t > fiveMinutesAgo);
 
-      if (connectionTimestamps.length >= 300) {
-        console.warn(`[${symbol}] ⚠ Rate limit: 300 connections/5min reached. Waiting...`);
+      const currentConnections = connectionTimestamps.length;
+      const limit = MAX_CONNECTIONS_PER_5MIN;
+      const percentUsed = Math.round((currentConnections / limit) * 100);
+
+      // Warning levels for rate limit monitoring
+      if (currentConnections >= limit) {
+        console.error(`[${symbol}] 🚨 CRITICAL: Rate limit exceeded! ${currentConnections}/${limit} connections in last 5min. BLOCKING NEW CONNECTION.`);
         currentReconnectDelay = Math.max(currentReconnectDelay, 60 * 1000); // Wait at least 1 minute
+      } else if (currentConnections >= limit * 0.85) {
+        console.warn(`[${symbol}] ⚠️  HIGH: Rate limit warning! ${currentConnections}/${limit} connections in last 5min (${percentUsed}% used)`);
+      } else if (currentConnections >= limit * 0.70) {
+        console.warn(`[${symbol}] ⚠  MEDIUM: ${currentConnections}/${limit} connections in last 5min (${percentUsed}% used)`);
+      } else if (currentConnections >= limit * 0.50) {
+        console.log(`[${symbol}] ℹ️  Rate limit: ${currentConnections}/${limit} connections in last 5min (${percentUsed}% used)`);
       }
 
       connectionTimestamps.push(Date.now());
@@ -418,6 +430,7 @@ class WebSocketManager {
 
   console.log(`Settings file: ${SETTINGS_FILE}`);
   console.log(`Redis: ${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}`);
+  console.log(`Rate limit: ${MAX_CONNECTIONS_PER_5MIN} connections per 5 minutes`);
   console.log(`Symbols: ${settings.SYMBOLS_LIST.join(", ")}\n`);
 
   const manager = new WebSocketManager(redisClient, settings);
