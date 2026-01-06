@@ -54,6 +54,7 @@ services:
     volumes:
       - ./CORE/4_Data:/app/CORE/4_Data
       - ./settings.yaml:/app/settings.yaml:ro
+      - ./README.md:/app/README.md:ro
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -88,7 +89,7 @@ services:
     environment:
       - AUTOUPDATE_WEBHOOK_FROM_GITHUB=${AUTOUPDATE_WEBHOOK_FROM_GITHUB}
       - FRONTEND_INDEX_PAGE=CORE/3_Frontend
-      - HOST_PROJECT_PATH=${PWD}
+      - HOST_PROJECT_PATH=/home/administrator/projects/PieHook
     networks:
       - app-network
 
