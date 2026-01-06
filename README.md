@@ -82,7 +82,7 @@ node run.js
 
 ```Bash
 git add .
-git commit -m "v0.0.10 - fixed webhook git operations"
+git commit -m "v0.0.11 - fixed webhook git operations"
 git push
 ```
 

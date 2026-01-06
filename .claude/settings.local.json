@@ -12,7 +12,12 @@
       "Bash(docker exec:*)",
       "Bash(docker logs:*)",
       "Bash(node run.js:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(tree:*)"
     ]
   }
 }
