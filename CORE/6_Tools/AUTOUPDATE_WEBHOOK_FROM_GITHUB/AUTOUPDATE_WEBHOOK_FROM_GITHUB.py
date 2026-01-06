@@ -117,13 +117,19 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             # Execute git pull with stash to handle local changes
             print("Running: git stash (to save local changes)", flush=True)
             try:
-                subprocess.check_output(["git", "stash"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-            except subprocess.CalledProcessError:
-                pass  # No changes to stash is fine
+                stash_result = subprocess.check_output(["git", "stash"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git stash output: {stash_result}", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Git stash failed (this is usually OK): {e.output}", flush=True)
 
             print("Running: git pull", flush=True)
-            result = subprocess.check_output(["git", "pull"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-            print(result, flush=True)
+            try:
+                result = subprocess.check_output(["git", "pull"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(result, flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Git pull failed with exit code {e.returncode}", flush=True)
+                print(f"Output: {e.output}", flush=True)
+                raise
 
             # Restore stashed changes
             print("Running: git stash pop (to restore local changes)", flush=True)
