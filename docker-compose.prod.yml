@@ -17,6 +17,26 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    container_name: PieHook-Backend
+    build:
+      context: .
+      dockerfile: CORE/2_Backend/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    volumes:
+      - ./CORE/4_Data:/app/CORE/4_Data
+      - ./settings.yaml:/app/settings.yaml:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    env_file:
+      - .env
+    networks:
+      - app-network
+
   frontend:
     container_name: PieHook-Frontend
     build:
@@ -25,9 +45,11 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      backend:
+        condition: service_started
     restart: always
     ports:
-      - "3000:3000"
+      - "5003:3000"
     volumes:
       - ./CORE/4_Data:/app/CORE/4_Data
       - ./settings.yaml:/app/settings.yaml:ro
@@ -46,8 +68,8 @@ services:
       retries: 3
       start_period: 10s
 
-  AUTOUPDATE_WEBHOOK_FROM_GITHUB:
-    container_name: PieHook-AUTOUPDATE_WEBHOOK_FROM_GITHUB
+  autoupdate-webhook:
+    container_name: PieHook-AutoUpdate-Webhook
     build:
       context: ./CORE/6_Tools/AUTOUPDATE_WEBHOOK_FROM_GITHUB
       dockerfile: Dockerfile

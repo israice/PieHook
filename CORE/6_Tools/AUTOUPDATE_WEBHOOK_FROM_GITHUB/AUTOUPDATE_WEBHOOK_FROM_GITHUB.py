@@ -71,9 +71,9 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             # Given the plan, we will use the prod file.
             # IMPORTANT: We must specify project name '-p piehook' because inside the container
             # the directory is /app, so default project name would be 'app', causing conflict with host's 'piehook'.
-            print("Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build frontend", flush=True)
+            print("Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build backend frontend", flush=True)
             subprocess.check_call(
-                ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "frontend"],
+                ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "backend", "frontend"],
                 cwd="/app",
                 stderr=subprocess.STDOUT
             )

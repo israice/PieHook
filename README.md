@@ -77,7 +77,7 @@ node run.js
 
 ```Bash
 git add .
-git commit -m "v0.0.7 - added AUTOUPDATE_WEBHOOK_FROM_GITHUB"
+git commit -m "v0.0.7 - test1 AUTOUPDATE_WEBHOOK_FROM_GITHUB"
 git push
 ```
 
