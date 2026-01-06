@@ -114,6 +114,22 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             current_version = get_current_deployed_version()
             print(f"Current deployed version: v{current_version}" if current_version else "Current version: unknown", flush=True)
 
+            # Check git status before pull
+            print("Running: git status", flush=True)
+            try:
+                git_status = subprocess.check_output(["git", "status"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git status:\n{git_status}", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Git status failed: {e.output}", flush=True)
+
+            # Reset any merge conflicts from previous failed attempts
+            print("Running: git reset --hard HEAD", flush=True)
+            try:
+                reset_result = subprocess.check_output(["git", "reset", "--hard", "HEAD"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git reset output: {reset_result}", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Git reset failed: {e.output}", flush=True)
+
             # Execute git pull with stash to handle local changes
             print("Running: git stash (to save local changes)", flush=True)
             try:
