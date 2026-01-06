@@ -122,15 +122,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             except subprocess.CalledProcessError as e:
                 print(f"Git status failed: {e.output}", flush=True)
 
-            # Remove untracked CSV files that may block git pull
-            print("Running: git clean -fd CORE/4_Data/*.csv", flush=True)
-            try:
-                clean_result = subprocess.check_output(["git", "clean", "-fd", "CORE/4_Data/"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-                print(f"Git clean output: {clean_result}", flush=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Git clean failed: {e.output}", flush=True)
-
-            # Reset any merge conflicts from previous failed attempts
+            # Reset only tracked files to avoid conflicts, preserve volume-mounted files
             print("Running: git reset --hard HEAD", flush=True)
             try:
                 reset_result = subprocess.check_output(["git", "reset", "--hard", "HEAD"], cwd="/app", stderr=subprocess.STDOUT, text=True)
@@ -138,29 +130,24 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             except subprocess.CalledProcessError as e:
                 print(f"Git reset failed: {e.output}", flush=True)
 
-            # Execute git pull with stash to handle local changes
-            print("Running: git stash (to save local changes)", flush=True)
+            # Fetch and merge with auto-resolution strategy (prefer incoming changes for code files)
+            print("Running: git fetch origin", flush=True)
             try:
-                stash_result = subprocess.check_output(["git", "stash"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-                print(f"Git stash output: {stash_result}", flush=True)
+                fetch_result = subprocess.check_output(["git", "fetch", "origin"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git fetch output: {fetch_result}", flush=True)
             except subprocess.CalledProcessError as e:
-                print(f"Git stash failed (this is usually OK): {e.output}", flush=True)
-
-            print("Running: git pull", flush=True)
-            try:
-                result = subprocess.check_output(["git", "pull"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-                print(result, flush=True)
-            except subprocess.CalledProcessError as e:
-                print(f"Git pull failed with exit code {e.returncode}", flush=True)
-                print(f"Output: {e.output}", flush=True)
+                print(f"Git fetch failed: {e.output}", flush=True)
                 raise
 
-            # Restore stashed changes
-            print("Running: git stash pop (to restore local changes)", flush=True)
+            print("Running: git merge origin/master --strategy-option=theirs", flush=True)
             try:
-                subprocess.check_output(["git", "stash", "pop"], cwd="/app", stderr=subprocess.STDOUT, text=True)
-            except subprocess.CalledProcessError:
-                pass  # No stash to pop is fine
+                merge_result = subprocess.check_output(["git", "merge", "origin/master", "--strategy-option=theirs"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git merge output: {merge_result}", flush=True)
+                result = merge_result
+            except subprocess.CalledProcessError as e:
+                print(f"Git merge failed with exit code {e.returncode}", flush=True)
+                print(f"Output: {e.output}", flush=True)
+                raise
 
             # Check if there were any changes
             if "Already up to date" in result or "Already up-to-date" in result:
