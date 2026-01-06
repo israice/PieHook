@@ -65,15 +65,15 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             print("Running: git pull", flush=True)
             subprocess.check_call(["git", "pull"], cwd="/app", stderr=subprocess.STDOUT)
             
-            # Execute docker compose up
-            # Using modern Docker Compose V2 plugin (docker compose instead of docker-compose)
+            # Execute docker-compose up
+            # Using docker-compose (legacy) for compatibility
             # We assume docker-compose.prod.yml is the target, but we might need to be flexible.
             # Given the plan, we will use the prod file.
             # IMPORTANT: We must specify project name '-p piehook' because inside the container
             # the directory is /app, so default project name would be 'app', causing conflict with host's 'piehook'.
-            print("Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build backend frontend", flush=True)
+            print("Running: docker-compose -p piehook -f docker-compose.prod.yml up -d --build backend frontend", flush=True)
             subprocess.check_call(
-                ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "backend", "frontend"],
+                ["docker-compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "backend", "frontend"],
                 cwd="/app",
                 stderr=subprocess.STDOUT
             )
