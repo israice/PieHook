@@ -40,6 +40,9 @@ npm install ws redis yaml rxjs node-fetch js-yaml
 ```Bash
 docker compose -f docker-compose.dev.yml down
 docker compose -f docker-compose.prod.yml down
+
+docker compose -f docker-compose.prod.yml logs backend
+
 ```
 
 ## start or update server
