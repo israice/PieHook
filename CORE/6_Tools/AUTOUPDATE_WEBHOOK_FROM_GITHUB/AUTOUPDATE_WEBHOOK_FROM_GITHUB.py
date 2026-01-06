@@ -182,9 +182,9 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
                 raise FileNotFoundError(f"Working directory not found: {work_dir}")
 
             # Update all containers including webhook
-            print(f"Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build --force-recreate", flush=True)
+            print(f"Running: docker compose -f docker-compose.prod.yml up -d --build --force-recreate", flush=True)
             subprocess.check_call(
-                ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "--force-recreate"],
+                ["docker", "compose", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "--force-recreate"],
                 cwd=work_dir,
                 stderr=subprocess.STDOUT
             )
