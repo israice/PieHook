@@ -938,9 +938,21 @@
       }
     });
 
+    // Load version from API
+    async function loadVersion() {
+      try {
+        const response = await fetch('/api/version');
+        const data = await response.json();
+        document.getElementById('versionDisplay').textContent = data.version;
+      } catch (error) {
+        console.error('Error loading version:', error);
+      }
+    }
+
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
     connectSSE();
+    loadVersion();
 
     window.addEventListener('beforeunload', () => {
       if (eventSource) {

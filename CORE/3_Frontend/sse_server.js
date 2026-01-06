@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chokidar from 'chokidar';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,6 +91,19 @@ app.get('/', (req, res) => {
 
 // Статические файлы (HTML, CSS, JS)
 app.use(express.static(__dirname));
+
+// Version API endpoint
+app.get('/api/version', (req, res) => {
+  try {
+    const commitMessage = execSync('git log -1 --format=%s', { encoding: 'utf8' }).trim();
+    const match = commitMessage.match(/v(\d+\.\d+\.\d+)/);
+    const version = match ? match[1] : '0.0.0';
+    res.json({ version: `v${version}`, commit: commitMessage });
+  } catch (error) {
+    console.error('Error getting version:', error);
+    res.json({ version: 'v0.0.7', commit: 'unknown' });
+  }
+});
 
 // SSE endpoint
 app.get('/events', (req, res) => {
