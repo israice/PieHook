@@ -11,7 +11,7 @@ COPY CORE/1_Redis/ ./CORE/1_Redis/
 COPY CORE/2_Backend/ ./CORE/2_Backend/
 COPY CORE/4_Data/ ./CORE/4_Data/
 COPY CORE/6_Tools/ ./CORE/6_Tools/
-COPY settings.yaml ./settings.yaml
+# settings.yaml is mounted as volume at runtime for dynamic updates
 COPY run.js ./run.js
 
 # Start the backend

@@ -15,7 +15,7 @@ RUN npm install --omit=dev --prefer-offline --no-audit || npm install --omit=dev
 COPY CORE/1_Redis/ ./CORE/1_Redis/
 COPY CORE/3_Frontend/ ./CORE/3_Frontend/
 COPY CORE/4_Data/ ./CORE/4_Data/
-COPY settings.yaml ./settings.yaml
+# settings.yaml is mounted as volume at runtime for dynamic updates
 
 # Expose порт для SSE сервера
 EXPOSE 3000
