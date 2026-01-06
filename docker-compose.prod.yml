@@ -29,6 +29,7 @@ services:
     volumes:
       - ./CORE/4_Data:/app/CORE/4_Data
       - ./settings.yaml:/app/settings.yaml:ro
+      - ./README.md:/app/README.md:ro
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
