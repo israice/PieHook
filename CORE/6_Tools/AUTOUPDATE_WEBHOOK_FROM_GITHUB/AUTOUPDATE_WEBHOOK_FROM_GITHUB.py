@@ -114,10 +114,23 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             current_version = get_current_deployed_version()
             print(f"Current deployed version: v{current_version}" if current_version else "Current version: unknown", flush=True)
 
-            # Execute git pull
+            # Execute git pull with stash to handle local changes
+            print("Running: git stash (to save local changes)", flush=True)
+            try:
+                subprocess.check_output(["git", "stash"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+            except subprocess.CalledProcessError:
+                pass  # No changes to stash is fine
+
             print("Running: git pull", flush=True)
             result = subprocess.check_output(["git", "pull"], cwd="/app", stderr=subprocess.STDOUT, text=True)
             print(result, flush=True)
+
+            # Restore stashed changes
+            print("Running: git stash pop (to restore local changes)", flush=True)
+            try:
+                subprocess.check_output(["git", "stash", "pop"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+            except subprocess.CalledProcessError:
+                pass  # No stash to pop is fine
 
             # Check if there were any changes
             if "Already up to date" in result or "Already up-to-date" in result:
@@ -140,11 +153,19 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             # IMPORTANT: We use HOST_PROJECT_PATH for docker compose because when running via docker.sock,
             # Docker needs paths relative to the HOST filesystem, not the container's /app
 
+            # Verify HOST_PROJECT_PATH exists
+            work_dir = HOST_PROJECT_PATH if os.path.isdir(HOST_PROJECT_PATH) else "/app"
+            print(f"Using working directory: {work_dir}", flush=True)
+
+            if not os.path.isdir(work_dir):
+                print(f"ERROR: Working directory does not exist: {work_dir}", flush=True)
+                raise FileNotFoundError(f"Working directory not found: {work_dir}")
+
             # First, update backend and frontend
             print(f"Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build backend frontend", flush=True)
             subprocess.check_call(
                 ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "backend", "frontend"],
-                cwd=HOST_PROJECT_PATH,
+                cwd=work_dir,
                 stderr=subprocess.STDOUT
             )
 
@@ -152,7 +173,7 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             print(f"Running: docker compose -p piehook -f docker-compose.prod.yml up -d --build autoupdate-webhook", flush=True)
             subprocess.check_call(
                 ["docker", "compose", "-p", "piehook", "-f", "docker-compose.prod.yml", "up", "-d", "--build", "autoupdate-webhook"],
-                cwd=HOST_PROJECT_PATH,
+                cwd=work_dir,
                 stderr=subprocess.STDOUT
             )
 
