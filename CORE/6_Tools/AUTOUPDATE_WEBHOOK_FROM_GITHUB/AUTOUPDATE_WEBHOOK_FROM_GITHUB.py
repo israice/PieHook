@@ -149,6 +149,13 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
                 print(f"Output: {e.output}", flush=True)
                 raise
 
+            # Fix git objects permissions (webhook runs as root, but user needs access)
+            try:
+                subprocess.check_output(["chown", "-R", "administrator:administrator", "/app/.git/objects"], stderr=subprocess.STDOUT, text=True)
+                print("Fixed git objects permissions", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Warning: Could not fix git permissions: {e.output}", flush=True)
+
             # Check if there were any changes
             if "Already up to date" in result or "Already up-to-date" in result:
                 print("No changes detected. Skipping rebuild.", flush=True)
