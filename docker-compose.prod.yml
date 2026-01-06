@@ -30,6 +30,7 @@ services:
       - ./CORE/4_Data:/app/CORE/4_Data
       - ./settings.yaml:/app/settings.yaml:ro
       - ./README.md:/app/README.md:ro
+      - ./CORE/3_Frontend/index.html:/app/CORE/3_Frontend/index.html
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
