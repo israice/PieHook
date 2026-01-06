@@ -13,6 +13,13 @@ let stopRequested = false;
 // ================================================
 
 async function ensureDockerRedisRunning() {
+  // Пропускаем проверку Docker если запущены внутри контейнера (production mode)
+  if (process.env.REDIS_HOST) {
+    console.log("🐳 Running inside Docker container - skipping Docker check");
+    console.log("✅ Using Redis at:", process.env.REDIS_HOST);
+    return;
+  }
+
   console.log("🔍 Checking Docker containers...");
 
   try {
