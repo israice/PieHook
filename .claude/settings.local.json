@@ -17,7 +17,8 @@
       "Bash(git restore:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(docker-compose:*)"
     ]
   }
 }

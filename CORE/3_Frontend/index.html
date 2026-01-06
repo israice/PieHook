@@ -604,17 +604,18 @@
     }
 
     function updateDisplay(data) {
-      const { headers, rows, timestamp } = data;
+      const { headers, rows, symbols, timestamp } = data;
 
       document.getElementById('lastUpdate').textContent = new Date(timestamp).toLocaleTimeString();
-      document.getElementById('symbolCount').textContent = rows.length;
+      document.getElementById('symbolCount').textContent = symbols ? symbols.length : 0;
 
-      if (rows.length === 0) {
+      if (rows.length === 0 || !symbols || symbols.length === 0) {
         return;
       }
 
+      // Сопоставляем строки данных с символами
       allCandles = rows.map((row, index) => ({
-        symbol: index === 0 ? 'XRPUSDT' : 'BTCUSDT',
+        symbol: symbols[index] || symbols[0], // Используем символ по индексу или первый символ
         open: parseFloat(row.Open_price),
         high: parseFloat(row.High_price),
         low: parseFloat(row.Low_price),
