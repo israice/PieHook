@@ -158,12 +158,8 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             new_version = get_version_from_readme()
             print(f"New version from README: v{new_version}" if new_version else "New version: unknown", flush=True)
 
-            # Compare versions
-            if current_version and new_version and current_version == new_version:
-                print(f"Version unchanged (v{current_version}). Skipping rebuild.", flush=True)
-                return
-
-            print(f"Version changed: v{current_version} -> v{new_version}. Proceeding with rebuild...", flush=True)
+            # Always proceed with rebuild when there are changes
+            print(f"Changes detected. Proceeding with rebuild (v{current_version} -> v{new_version})...", flush=True)
 
             # Execute docker compose up
             # Using modern docker compose (v2) command
