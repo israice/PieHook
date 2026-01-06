@@ -122,6 +122,14 @@ class WebhookHandler(http.server.BaseHTTPRequestHandler):
             except subprocess.CalledProcessError as e:
                 print(f"Git status failed: {e.output}", flush=True)
 
+            # Remove untracked CSV files that may block git pull
+            print("Running: git clean -fd CORE/4_Data/*.csv", flush=True)
+            try:
+                clean_result = subprocess.check_output(["git", "clean", "-fd", "CORE/4_Data/"], cwd="/app", stderr=subprocess.STDOUT, text=True)
+                print(f"Git clean output: {clean_result}", flush=True)
+            except subprocess.CalledProcessError as e:
+                print(f"Git clean failed: {e.output}", flush=True)
+
             # Reset any merge conflicts from previous failed attempts
             print("Running: git reset --hard HEAD", flush=True)
             try:
