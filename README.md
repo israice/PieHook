@@ -36,14 +36,22 @@
 ### Before start
 npm install ws redis yaml rxjs node-fetch js-yaml
 
-### Run Redis Docker
-docker-compose up --build -d
+## stop server
+```Bash
+docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.prod.yml down
+```
 
-### Show Websocket in Dcoker
-docker-compose logs -f piehook
+## start or update server
+```Bash
+docker compose -f docker-compose.dev.yml up --build -d
+docker compose -f docker-compose.prod.yml up --build -d
+```
 
 ### Run the checks
+```Bash
 node run.js
+```
 
 ---
 
@@ -59,6 +67,7 @@ node run.js
   - added SSE method for web page live updates from csv file
   - added tradingview style to froendend page 
   - added docker-compose.prod.yml
+  - added AUTOUPDATE_WEBHOOK_FROM_GITHUB
 - [ ] v0.0.8 - get all other candles [0] and save in history file
 - [ ] v0.0.9 - check for each timeframe percent and trend 
 
@@ -68,7 +77,7 @@ node run.js
 
 ```Bash
 git add .
-git commit -m "v0.0.7 - test 2"
+git commit -m "v0.0.7 - added AUTOUPDATE_WEBHOOK_FROM_GITHUB"
 git push
 ```
 

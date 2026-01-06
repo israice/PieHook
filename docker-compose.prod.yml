@@ -1,0 +1,76 @@
+name: piehook
+
+services:
+  redis:
+    container_name: PieHook-Redis
+    image: "redis:alpine"
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    container_name: PieHook-Frontend
+    build:
+      context: .
+      dockerfile: CORE/3_Frontend/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./CORE/4_Data:/app/CORE/4_Data
+      - ./settings.yaml:/app/settings.yaml:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONDONTWRITEBYTECODE=1
+    env_file:
+      - .env
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  AUTOUPDATE_WEBHOOK_FROM_GITHUB:
+    container_name: PieHook-AUTOUPDATE_WEBHOOK_FROM_GITHUB
+    build:
+      context: ./CORE/6_Tools/AUTOUPDATE_WEBHOOK_FROM_GITHUB
+      dockerfile: Dockerfile
+    depends_on:
+      - frontend
+    restart: always
+    ports:
+      - "9001:9001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - AUTOUPDATE_WEBHOOK_FROM_GITHUB=${AUTOUPDATE_WEBHOOK_FROM_GITHUB}
+      - FRONTEND_INDEX_PAGE=CORE/3_Frontend
+    networks:
+      - app-network
+
+# сеть для взаимодействия между контейнерами
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:
