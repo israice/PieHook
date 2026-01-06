@@ -9,8 +9,8 @@ import { mergeMap, tap, takeUntil, switchMap, catchError, finalize } from "rxjs/
 // --- Constants ---
 const SETTINGS_FILE = "./settings.yaml";
 const BINANCE_WS_BASE = "wss://fstream.binance.com/ws/";
-const REDIS_HOST = "redis";
-const REDIS_PORT = 6379;
+const REDIS_HOST = process.env.REDIS_HOST || "redis";
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 const REDIS_DB = 0;
 const RECONNECT_DELAY = 3;
 const MAX_RECONNECT_DELAY = 60;

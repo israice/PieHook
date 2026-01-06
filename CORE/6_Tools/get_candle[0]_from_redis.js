@@ -10,8 +10,8 @@ const SETTINGS_FILE = './settings.yaml';
 
 const settings = yaml.load(fs.readFileSync(SETTINGS_FILE, 'utf8'));
 
-const REDIS_HOST = 'localhost';
-const REDIS_PORT = 6379;
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 const REDIS_DB   = 0;
 const SYMBOLS_LIST = settings.SYMBOLS_LIST;
 
