@@ -1,132 +1,92 @@
-// ================== ИМПОРТ ==================
-import { before_first_start } from "./CORE/2_Backend/A_BEFORE_FIRST_START/A_check_if_on.js";
-import { backend_runner } from "./CORE/2_Backend/A_backend.js";
-import { run_after_finish } from "./CORE/2_Backend/A_RESET/C_after_finish/C_run.js";
-import { execSync } from "child_process";
+// ==========================================
+// run main script
+// ===============import=====================
+import { spawn } from "node:child_process";
+import { stat } from "node:fs/promises";
+import process from "node:process";
+// ==========================================
+import { CORE } from "./CORE/run.js";
+import { text } from "./TOOLS/text.js";
+import { before_start } from "./CORE/before_start/run.js";
 
-const LOOP_DELAY_MS = 500;
-let loopMode = true;
-let stopRequested = false;
+// ===============config=====================
+const RUNNING_WEBSOCKET_PROCESS = ["CORE/websocket_stream/binance_websocket.js"];
+const FIRST_WRITE_FILE = "CORE/websocket_stream/binance_websocket.csv";
+const FIRST_WRITE_POLL_MS = 200;
+const SHOW_EXECUTION_TIME = true;
+const SHOW_COMMENT = false;
+const COMMENT_TEXT = "My custom comment";
 
-// ================================================
-// 🐳 ПРОВЕРКА И ЗАПУСК DOCKER REDIS
-// ================================================
+// ===============list=======================
+async function LIST_THAT_RUNNING_ONCE_ON_STARTUP() { 
+  await before_start(); 
+}
 
-async function ensureDockerRedisRunning() {
-  // Пропускаем проверку Docker если запущены внутри контейнера (production mode)
-  if (process.env.REDIS_HOST) {
-    console.log("🐳 Running inside Docker container - skipping Docker check");
-    console.log("✅ Using Redis at:", process.env.REDIS_HOST);
-    return;
-  }
+async function LIST_THAT_RUNNING_IN_LOOP() {
+  await CORE();
+}
 
-  console.log("🔍 Checking Docker containers...");
+async function LIST_THAT_RUNNING_AFTER_STOP() { 
+  await text(); 
+}
+
+// ===============logic======================
+const RUN = (childProcess, timeout = 5000) => childProcess.exitCode !== null || childProcess.signalCode !== null ? Promise.resolve() : new Promise((resolve) => {
+  const timer = setTimeout(() => { if (childProcess.exitCode === null && childProcess.signalCode === null) childProcess.kill("SIGKILL"); }, timeout);
+  childProcess.once("close", () => { clearTimeout(timer); resolve(); });
+  childProcess.kill("SIGTERM");
+});
+
+async function runMainProcess() {
+  const childProcesses = [];
+  let SHOULD_STOP = false;
+  const mtimeOf = async () => { try { return (await stat(FIRST_WRITE_FILE)).mtimeMs; } catch { return null; } };
+  const waitForFirstWrite = async (childProcess, initialMtime) => {
+    while (!SHOULD_STOP) {
+      if (childProcess.exitCode !== null || childProcess.signalCode !== null) return false;
+      if (await mtimeOf() !== initialMtime) return true;
+      await new Promise((resolve) => setTimeout(resolve, FIRST_WRITE_POLL_MS));
+    }
+    return false;
+  };
+  const killChildren = () => {
+    for (const childProcess of childProcesses) {
+      if (childProcess.exitCode === null && childProcess.signalCode === null) childProcess.kill("SIGKILL");
+    }
+  };
+
+  process.on("exit", killChildren);
+  process.on("uncaughtException", (error) => { killChildren(); console.error("[FATAL ERROR]", error); process.exit(1); });
+  process.on("unhandledRejection", (reason) => { killChildren(); console.error("[FATAL ERROR]", reason); process.exit(1); });
+  process.on("SIGINT", () => { SHOULD_STOP = true; killChildren(); });
+  process.on("SIGTERM", () => { SHOULD_STOP = true; killChildren(); });
 
   try {
-    // Проверяем состояние контейнеров (все, включая остановленные)
-    const allContainers = execSync(
-      'docker ps -a --filter "name=PieHook-Redis" --format "{{.Names}} {{.Status}}"',
-      {
-        encoding: "utf8",
-        stdio: ["pipe", "pipe", "pipe"],
-      }
-    ).trim();
-
-    if (!allContainers) {
-      // Контейнеры не существуют - создаём и запускаем
-      console.log("🚀 Creating and starting Docker containers...");
-      execSync("docker-compose up -d --build", { stdio: "inherit" });
-      console.log("✅ Docker containers created and started");
-    } else if (allContainers.includes("Up")) {
-      // Контейнеры уже запущены
-      console.log("✅ Docker containers are already running");
-      return;
-    } else {
-      // Контейнеры существуют, но остановлены
-      console.log("🔄 Starting Docker containers...");
-      execSync("docker-compose up -d", { stdio: "inherit" });
-      console.log("✅ Docker containers started");
+    const initialMtime = await mtimeOf();
+    for (const scriptPath of RUNNING_WEBSOCKET_PROCESS) {
+      const childProcess = spawn(process.execPath, [scriptPath], { stdio: "inherit" });
+      childProcesses.push(childProcess);
+      childProcess.on("error", (error) => { console.error("[WEBSOCKET ERROR]", error.message); SHOULD_STOP = true; });
+      childProcess.on("exit", (code) => { if (code !== 0 && !SHOULD_STOP) { console.error("[WEBSOCKET STOPPED]", code); SHOULD_STOP = true; } });
     }
-  } catch (error) {
-    console.error("❌ Failed to start Docker containers:", error.message);
-    console.log("\n💡 Please ensure Docker is running and try again.");
-    process.exit(1);
+
+    await LIST_THAT_RUNNING_ONCE_ON_STARTUP();
+    if (await waitForFirstWrite(childProcesses[0], initialMtime)) {
+      while (!SHOULD_STOP) await LIST_THAT_RUNNING_IN_LOOP();
+    }
+
+  } catch (error) { console.error("[ERROR]", error.message); }
+  finally {
+    await Promise.all(childProcesses.map((childProcess) => RUN(childProcess)));
+    try { await LIST_THAT_RUNNING_AFTER_STOP(); } catch (error) { console.error("[AFTER STOP ERROR]", error.message); }
+    console.log("[DONE] Программа завершена.");
   }
-
-  // Ждём пока Redis и Frontend будут готовы
-  console.log("⏳ Waiting for services to be ready...");
-  await new Promise((resolve) => setTimeout(resolve, 5000));
 }
 
-// ================================================
+const originalLoop = LIST_THAT_RUNNING_IN_LOOP;
+LIST_THAT_RUNNING_IN_LOOP = async () => { if (SHOW_COMMENT) console.log(COMMENT_TEXT); const executionStartTime = performance.now(); try { await originalLoop(); } finally { if (SHOW_EXECUTION_TIME) console.log(`[TIME] ${((performance.now() - executionStartTime) / 1000).toFixed(3)} sec`); } };
 
-async function pre_start_list() {
-  await before_first_start();
-}
+// ===============export=====================
+export { runMainProcess };
 
-// ================================================
-
-async function list_in_loop() {
-  console.time("Speed");
-
-  await backend_runner();
-
-  console.timeEnd("Speed");
-}
-
-// ================================================
-
-async function after_finish() {
-  console.log("- - After Finish...");
-  await run_after_finish();
-}
-
-// ================================================
-
-process.on("SIGINT", handleStopSignal);
-
-// --- graceful shutdown ---
-function handleStopSignal() {
-  stopRequested = true;
-}
-
-// --- остановка цикла ---
-async function stopLoop() {
-  await after_finish();
-  console.log("Loop stopped gracefully.");
-  process.exit(0);
-}
-
-// --- выполнение в цикле ---
-async function scheduleNextIteration() {
-  if (stopRequested) {
-    await stopLoop();
-  }
-  setTimeout(runLoop, LOOP_DELAY_MS);
-}
-
-// --- основной процесс цикла ---
-async function runLoop() {
-  await list_in_loop();
-  if (stopRequested) {
-    await stopLoop();
-  }
-  scheduleNextIteration();
-}
-
-async function main_runner() {
-  // Проверяем и запускаем Docker Redis перед началом работы
-  await ensureDockerRedisRunning();
-
-  await pre_start_list();
-  if (!loopMode) {
-    console.log("One-shot mode:");
-    await list_in_loop();
-    console.log("Done.");
-    process.exit(0);
-  }
-  runLoop();
-}
-
-// ================== СТАРТ ==================
-main_runner();
+runMainProcess().catch((error) => { console.error("[FATAL ERROR]", error); process.exitCode = 1; });

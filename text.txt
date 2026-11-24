@@ -1,0 +1,43 @@
+скрипт
+сверяет два значения из двух разных источников
+на основе настроек из файла 
+THE_SETTINGS.yaml
+проверяем только для первой пары из списка 
+THE_PAIRS:
+  - XRPUSDT
+для первой свечи из списка настроек
+THE_TIMEFRAMES:
+  - 1m
+  - 1h
+в файле CORE\first_candle_copy\copy_websocket_candle.csv
+для столбика candle с значением 0
+нас интересует значение из колонки update_time
+это первое значение
+
+
+второе значение береться из файла
+THE_HISTORY.csv
+из колонки close_time
+тоже как и в первом случае только с столбика candle с значением 0
+
+
+мы сравниваем значение update_time с close_time
+
+
+
+если update_time выше чем close_time
+то запускаем 
+// ===============list=======================
+async function list_to_do() {
+  await first_candle_copy();
+  await last_candle_copy();
+  await the_delay_from_SETTINGS();
+}
+
+если же update_time ниже или равен close_time
+ничего не делаем
+
+
+все перечисленные настройки должны быть в config в верху скрипта в виде const
+для удобства настройки скрипта 
+

@@ -1,0 +1,19 @@
+# ============================================= #
+# -------------- NEW SESSION SETTINGS --------- #
+# ============================================= #
+DELAY_PAUSE_IN_SECONDS: 3
+PAPER_TRADING: NO
+BALANCE_BASED: USDT
+# ============================================= #
+THE_MARKET: FUTURES
+THE_PAIRS:
+  - XRPUSDT
+  - BTCUSDT
+
+THE_TIMEFRAMES:
+  - 1m
+  - 1h
+# ============================================= #
+THE_BINANCE_ACCOUNTS: 
+  - REAL1
+# ============================================= #
